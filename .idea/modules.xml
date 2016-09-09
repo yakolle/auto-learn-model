@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/auto-learn-model/auto-learn-model.iml" filepath="$PROJECT_DIR$/auto-learn-model/auto-learn-model.iml" />
+      <module fileurl="file://$PROJECT_DIR$/automl.iml" filepath="$PROJECT_DIR$/automl.iml" />
+    </modules>
+  </component>
+</project>
