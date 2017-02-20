@@ -88,7 +88,12 @@ class AdaptableScheduler extends ProbeSchedulerBase {
     var nextParams = currentParams
     var nextEstimate = 0.0
     var schedulerIndex = -1
+    var maxEstimateAcceptRatioNice = maxEstimateAcceptRatio
+    var sinkingTimes = 0
     do {
+      //如果只有一个超参数，就禁用掉crossover策略
+      if (currentParams.length <= 1) schedulerWeights(0) = 0.0
+
       //按照各策略历史收益进行抽样选择
       val weights = schedulerWeights.map {
         wIt =>
@@ -100,8 +105,13 @@ class AdaptableScheduler extends ProbeSchedulerBase {
 
       nextParams = scheduler.getNextParams(randomGenerator, currentTask, paramMatrix)
       nextEstimate = learner.predict(nextParams)
-      //如果评估值大于当前任务的验证值，或者虽然小于但仍然在容许的限度范围内，就认为新生成的参数集合是可探测的
-    } while (nextEstimate < currentEstimate && 1 - nextEstimate / currentEstimate > maxEstimateAcceptRatio * randomGenerator.nextDouble)
+      /*
+      如果评估值大于当前任务的验证值，或者虽然小于但仍然在容许的限度范围内，就认为新生成的参数集合是可探测的,
+      并且如果策略生成的参数评估多次失败，就线性提升容忍度（临时）
+       */
+      maxEstimateAcceptRatioNice = maxEstimateAcceptRatio + (1 - maxEstimateAcceptRatio) * sinkingTimes / maxSinkingTimes
+      sinkingTimes += 1
+    } while (nextEstimate < currentEstimate && 1 - nextEstimate / currentEstimate > maxEstimateAcceptRatioNice * randomGenerator.nextDouble)
 
     insertIntoParamSchedulerCache(nextParams.toIndexedSeq, schedulerIndex)
 

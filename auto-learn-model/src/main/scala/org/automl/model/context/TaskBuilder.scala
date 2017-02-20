@@ -4,6 +4,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.automl.model.operators.BaseOperator
 import org.automl.model.operators.data.bagging.ABBagging
 import org.automl.model.operators.data.format.DataAssembler
+import org.automl.model.operators.data.sift.LassoSelector
 import org.automl.model.operators.model.train.LogisticRegressionTrain
 import org.automl.model.operators.model.validation.{AUCValidation, AssemblyValidation, ValidationBase}
 import org.automl.model.strategy.learn.{LearnerBase, LinearRegressionLearner}
@@ -26,7 +27,7 @@ object TaskBuilder {
   //参数集合对应的验证值在欧式空间中的权重比例（参数集合和该参数集合对应的验证值构成整个参数的欧式空间）
   var validationWeight = 0.5
   //是否收敛的评估占比阈值
-  var convergedThreshold = 0.001
+  var convergedThreshold = 1E-4
 
   def loadData(sparkSession: SparkSession, args: Array[String]): DataFrame = {
     sparkSession.read.option("header", value = true).option("inferSchema", value = true)
@@ -42,7 +43,23 @@ object TaskBuilder {
   def loadOperators(args: Array[String]): Array[BaseOperator] = {
     val trainer = new LogisticRegressionTrain
     trainer.setValidators(Array[ValidationBase](new AUCValidation))
-    Array[BaseOperator](new ABBagging, new DataAssembler, trainer, new AUCValidation)
+    Array[BaseOperator](new ABBagging, new DataAssembler, new LassoSelector, trainer, new AUCValidation)
+  }
+
+  /**
+    * 初始化理想的验证值
+    *
+    * @param operators 算子列表，据此列表计算理想验证值
+    */
+  def initIdealValidation(operators: Array[BaseOperator]) {
+    val idealValidations = Array((1.0, 1.0))
+    val idealValidation = AssemblyValidation.assembleValidation(idealValidations)
+
+    val idealTrainValidations = Array((1.0, 1.0))
+    val idealTrainValidation = AssemblyValidation.assembleTrainValidation(idealTrainValidations)
+
+    val validation = AssemblyValidation.assembleTrainingAndTrainedValidation(idealTrainValidation, idealValidation)
+    ContextHolder.setIdealValidation(validation)
   }
 
   /**

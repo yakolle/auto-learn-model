@@ -24,6 +24,7 @@ object MasterConsole {
     val data = TaskBuilder.loadData(sparkSession, args)
     val operators = TaskBuilder.loadOperators(args)
     TaskBuilder.initAssemblyValidation(operators)
+    TaskBuilder.initIdealValidation(operators)
     ContextHolder.initBestOperatorSequences(beamSearchNum)
     val tasks = TaskBuilder.buildProbeTask(operators, data, beamSearchNum)
     val agents = TaskBuilder.buildProbeAgent(beamSearchNum)

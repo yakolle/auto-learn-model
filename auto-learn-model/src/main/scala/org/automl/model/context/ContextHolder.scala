@@ -29,11 +29,23 @@ object ContextHolder {
 
   private var paramBoundaries: Array[(Double, Double)] = _
 
-  def setSparkSession(sparkSession: SparkSession) = if (null == this.sparkSession) this.sparkSession = sparkSession
+  private var idealValidation: Double = 0.0
 
-  def setLearner(learner: LearnerBase) = if (null == this.learner) this.learner = learner
+  def setIdealValidation(idealValidation: Double) {
+    this.idealValidation = idealValidation
+  }
 
-  def setScheduler(scheduler: ProbeSchedulerBase) = if (null == this.scheduler) this.scheduler = scheduler
+  def setSparkSession(sparkSession: SparkSession) {
+    if (null == this.sparkSession) this.sparkSession = sparkSession
+  }
+
+  def setLearner(learner: LearnerBase) {
+    if (null == this.learner) this.learner = learner
+  }
+
+  def setScheduler(scheduler: ProbeSchedulerBase) {
+    if (null == this.scheduler) this.scheduler = scheduler
+  }
 
   def getParams = params.toArray
 
@@ -149,7 +161,7 @@ object ContextHolder {
     */
   def hasConverged: Boolean = {
     //获取当前学习器对各个超参数的评估权重
-    var weights = learner.getWeights
+    var weights = learner.getWeights.map(math.abs)
     //计算最终验证值的权重，按照TaskBuilder.validationWeight作为验证值同超参数集合的比重
     val weightNorm = MathUtil.calcNorm(weights)
     //x^2=a,t^2=1-a，其中a=TaskBuilder.validationWeight，x=validationWeight，t为原超参数变换后的norm
@@ -165,9 +177,12 @@ object ContextHolder {
     //计算各条线到中心的平均距离，并且按照当前学习器学习到的各超参数的评估权重进行加权
     val clusterMeanDist = bestParams.map(SimilarityUtil.calcWeightedEuclideanDistance(_, bestParamsCenter, weights)).sum / bestParams.length
     //计算各条线最大距离，并且按照当前学习器学习到的各超参数的评估权重进行加权
-    val maxDist = MathUtil.calcWeightedNorm(paramBoundaries.map(boundPair => boundPair._2 - boundPair._1) :+ 1.0, weights)
+    val paramDomainScales = paramBoundaries.map(boundPair => boundPair._2 - boundPair._1)
+    val maxDist = MathUtil.calcWeightedNorm(paramDomainScales :+ this.idealValidation, weights)
+    val idealMaxDist = MathUtil.calcWeightedNorm(Array.fill(paramDomainScales.length)(paramDomainScales.max)
+      :+ this.idealValidation, weights)
 
     //如果各条线到中心的平均距离与各条线最大距离的比重小于某个阈值，就认为是收敛了
-    clusterMeanDist / maxDist <= TaskBuilder.convergedThreshold
+    clusterMeanDist / maxDist <= TaskBuilder.convergedThreshold * maxDist / idealMaxDist
   }
 }

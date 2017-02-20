@@ -41,7 +41,8 @@ class LassoSelector extends SiftFeaturesBase {
     val selectedColNames = for (i <- 0 until coefficients.size; if math.abs(coefficients(i)) > zeroDomain)
       yield colNames(i)
 
-    this.featureIDs = selectedColNames.toArray
+    this.featureIDs = if (selectedColNames.length <= 0) Array(colNames(coefficients.argmax))
+    else selectedColNames.toArray
     transform(data)
   }
 

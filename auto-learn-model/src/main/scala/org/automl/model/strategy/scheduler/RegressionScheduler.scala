@@ -35,7 +35,7 @@ class RegressionScheduler extends ProbeSchedulerBase {
     //按照距离当前搜索线的距离（验证值度量），对其周围的数据进行分化学习，学习出当前线周围的local function
     val localLearner = learner.clone
     var nextPace = 0.0
-    if (Double.MaxValue != diffTuple._1 && diffTuple._1 != diffTuple._2) {
+    if (Double.MaxValue != diffTuple._1 && Double.MinValue != diffTuple._2 && diffTuple._1 != diffTuple._2) {
       var weightSum = 0.0
       paramMatrix.foreach {
         paramArray =>

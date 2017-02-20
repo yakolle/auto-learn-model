@@ -66,11 +66,11 @@ class ProbeTask(private val operatorChain: Array[BaseOperator], var data: DataFr
   def getRunPoint(paramIndex: Int): Int = {
     var runPoint = 0
     var paramPos = paramIndex
-    for (operator <- operatorChain; if paramPos > 0 || 0 == operator.getParamNum) {
-      paramPos -= operator.getParamNum
+    while (runPoint < operatorChain.length && paramPos >= 0) {
+      paramPos -= operatorChain(runPoint).getParamNum
       runPoint += 1
     }
-    runPoint
+    runPoint - 1
   }
 
   /**

@@ -15,8 +15,11 @@ abstract class ProbeSchedulerBase {
 
   //对已经探测过的线进行轮盘选择时，上下浮动的最大比率，当然是按照每条线的实际验证值进行轮盘选择
   var maxPeerFluctuationRatio = 0.1
-  //本策略进行评估时，最大的评估容忍限度比率
+  //本策略进行评估时，最大的评估容忍限度比率，越大容忍度越大
   protected var maxEstimateAcceptRatio = 0.2
+
+  //如果策略选取的参数评估一直不通过，最大的尝试次数
+  protected val maxSinkingTimes = 10
 
   def setMaxEstimateAcceptRatio(maxEstimateAcceptRatio: Double) = this.maxEstimateAcceptRatio = maxEstimateAcceptRatio
 
@@ -77,11 +80,18 @@ abstract class ProbeSchedulerBase {
 
     var nextParams = currentParams
     var nextEstimate = 0.0
+    var maxEstimateAcceptRatioNice = maxEstimateAcceptRatio
+    var sinkingTimes = 0
     do {
       nextParams = getNextParams(randomGenerator, currentTask, paramMatrix)
       nextEstimate = learner.predict(nextParams)
-      //如果评估值大于当前任务的验证值，或者虽然小于但仍然在容许的限度范围内，就认为新生成的参数集合是可探测的
-    } while (nextEstimate < currentEstimate && 1 - nextEstimate / currentEstimate > maxEstimateAcceptRatio * randomGenerator.nextDouble)
+      /*
+      如果评估值大于当前任务的验证值，或者虽然小于但仍然在容许的限度范围内，就认为新生成的参数集合是可探测的,
+      并且如果策略生成的参数评估多次失败，就线性提升容忍度（临时）
+       */
+      maxEstimateAcceptRatioNice = maxEstimateAcceptRatio + (1 - maxEstimateAcceptRatio) * sinkingTimes / maxSinkingTimes
+      sinkingTimes += 1
+    } while (nextEstimate < currentEstimate && 1 - nextEstimate / currentEstimate > maxEstimateAcceptRatioNice * randomGenerator.nextDouble)
 
     currentTask.updateParams(nextParams)
     currentTask

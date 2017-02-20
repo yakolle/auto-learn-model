@@ -23,7 +23,8 @@ class MutationScheduler extends ProbeSchedulerBase {
     */
   override def getNextParams(randomGenerator: Random, currentTask: ProbeTask, paramMatrix: Array[Array[Double]]): Array[Double] = {
     //对变异点进行抽样，将学习器的各参数权重看成各参数重要程度的概率
-    val weights = learner.getWeights.map(wIt => SampleUtil.getNextNonNegativeTrimmedGaussian(randomGenerator, wIt, maxMutationPointFluctuationRatio / 3))
+    val weights = learner.getWeights.map(wIt => SampleUtil.getNextNonNegativeTrimmedGaussian(randomGenerator, math.abs(wIt),
+      maxMutationPointFluctuationRatio / 3))
     val mutationPoint = SampleUtil.rouletteLikeSelect(weights)
     //根据参数序列中的变异点找到该参数所属算子的算子索引
     currentTask.runPoint = currentTask.getRunPoint(mutationPoint)
