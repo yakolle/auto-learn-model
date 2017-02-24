@@ -15,7 +15,7 @@ abstract class TransformBase extends BaseOperator {
   this.procedureType = "transform"
 
   //该transform是否开启
-  protected var on = false
+  protected var on = true
 
   /**
     * 该transform是否开启
@@ -89,7 +89,7 @@ abstract class TransformBase extends BaseOperator {
     * @param paramIndex 第几个（从0开始）超参数
     * @return 第paramIndex个超参数的经验值（warm start点）
     */
-  override def getEmpiricalParam(data: DataFrame, paramIndex: Int): Double = 0.0
+  override def getEmpiricalParam(data: DataFrame, paramIndex: Int): Double = 1.0
 
   /**
     * 获取超参数当前值

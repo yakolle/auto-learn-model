@@ -1,12 +1,19 @@
 package org.automl.model.context
 
+import java.io.{BufferedWriter, File, FileWriter, IOException}
 import java.util
 
+import org.apache.commons.io.FileUtils
 import org.apache.spark.ml.attribute.{Attribute, AttributeGroup, NumericAttribute}
 import org.apache.spark.ml.linalg.Vectors
 import org.apache.spark.sql.types.{DoubleType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.automl.model.operators.BaseOperator
+import org.automl.model.operators.data.evaluation.EvaluationBase
+import org.automl.model.operators.data.sift.SiftFeaturesBase
+import org.automl.model.operators.data.transform.TransformBase
+import org.automl.model.operators.model.train.TrainBase
+import org.automl.model.operators.model.validation.ValidationBase
 import org.automl.model.strategy.ProbeTask
 import org.automl.model.strategy.learn.LearnerBase
 import org.automl.model.strategy.scheduler.ProbeSchedulerBase
@@ -30,6 +37,8 @@ object ContextHolder {
   private var paramBoundaries: Array[(Double, Double)] = _
 
   private var idealValidation: Double = 0.0
+
+  private val convergeRecBuffer: ArrayBuffer[(Int, Double)] = new ArrayBuffer[(Int, Double)]
 
   def setIdealValidation(idealValidation: Double) {
     this.idealValidation = idealValidation
@@ -97,7 +106,6 @@ object ContextHolder {
     val rowList = new util.ArrayList[Row]
     data.foreach(rec => rowList.add(Row(Vectors.dense(rec.take(featuresLen)), rec.last)))
 
-
     val featuresAttrs = Array.fill(featuresLen)(NumericAttribute.defaultAttr)
     val schema = StructType(Array(new AttributeGroup("features", featuresAttrs.asInstanceOf[Array[Attribute]]).toStructField,
       StructField("label", DoubleType, nullable = false)))
@@ -128,13 +136,12 @@ object ContextHolder {
     * @return 验证值最高的top beamSearchNum个超参数集合及相应的验证值
     */
   def getBestParams: Array[Array[Double]] = {
-    bestOperatorSequences.map {
-      case (operatorChain, validation) =>
-        val params = operatorChain.flatMap {
-          operator =>
-            for (i <- 0 until operator.getParamNum) yield operator.getCurrentParam(i)
-        }
-        params :+ validation
+    for ((operatorChain, validation) <- bestOperatorSequences; if null != operatorChain) yield {
+      val params = operatorChain.flatMap {
+        operator =>
+          for (i <- 0 until operator.getParamNum) yield operator.getCurrentParam(i)
+      }
+      params :+ validation
     }
   }
 
@@ -155,6 +162,113 @@ object ContextHolder {
   }
 
   /**
+    * 输出收敛记录
+    *
+    * @param outputFilePath 收敛记录文件路径
+    */
+  def outputConvergenceRecord(outputFilePath: String) {
+    val lines = new java.util.ArrayList[String]
+    for (learnRec <- convergeRecBuffer) lines.add(learnRec._1 + "," + learnRec._2)
+
+    try
+      FileUtils.writeLines(new File(outputFilePath), lines)
+    catch {
+      case e: IOException =>
+        e.printStackTrace()
+    }
+  }
+
+  /**
+    * 输出搜索到的最好结果
+    *
+    * @param outputFilePath 搜索结果文件路径
+    */
+  def outputBestSearchResults(outputFilePath: String) {
+    val writer = new BufferedWriter(new FileWriter(outputFilePath))
+    val strBuffer = StringBuilder.newBuilder
+
+    try {
+      bestOperatorSequences.foreach {
+        case (operatorChain, validation) =>
+          if (null != operatorChain) {
+            operatorChain.foreach {
+              case operator: EvaluationBase =>
+                writer.write(operator.getCanonicalName)
+                writer.newLine()
+
+                strBuffer.clear()
+                operator.getEvaluations.foreach(strBuffer.append(_).append("\t"))
+                writer.write(strBuffer.substring(0, strBuffer.length - 1))
+                writer.newLine()
+
+                writer.write("-----------------------------------------------------------")
+                writer.newLine()
+              case operator: TransformBase =>
+                writer.write(operator.getCanonicalName)
+                writer.newLine()
+                writer.write(if (operator.isOn) "on" else "off")
+                writer.newLine()
+
+                if (operator.isOn) {
+                  operator.explain(writer)
+                  writer.newLine()
+                }
+
+                writer.write("-----------------------------------------------------------")
+                writer.newLine()
+              case operator: SiftFeaturesBase =>
+                writer.write(operator.getCanonicalName)
+                writer.newLine()
+
+                strBuffer.clear()
+                operator.getFeatureIDs.foreach(strBuffer.append(_).append("\t"))
+                writer.write(strBuffer.substring(0, strBuffer.length - 1))
+                writer.newLine()
+
+                writer.write("-----------------------------------------------------------")
+                writer.newLine()
+              case operator: TrainBase =>
+                writer.write(operator.getCanonicalName)
+                writer.newLine()
+
+                operator.explainModel(writer)
+                writer.newLine()
+
+                writer.write("-----------------------------------------------------------")
+                writer.newLine()
+              case operator: ValidationBase =>
+                writer.write(operator.getCanonicalName)
+                writer.newLine()
+
+                strBuffer.clear()
+                operator.getValidations.foreach {
+                  case (trainValidation, testValidation) =>
+                    strBuffer.append(trainValidation).append(",").append(testValidation).append("\t")
+                }
+                writer.write(strBuffer.substring(0, strBuffer.length - 1))
+                writer.newLine()
+
+                writer.write("-----------------------------------------------------------")
+                writer.newLine()
+              case _ =>
+            }
+
+            writer.write("finalValidation=" + validation)
+            writer.newLine()
+          }
+          writer.write("===========================================================")
+          writer.newLine()
+          writer.newLine()
+      }
+
+      writer.close()
+    } catch {
+      case e: IOException =>
+        e.printStackTrace()
+    }
+  }
+
+  /**
     * 判断是否收敛，根据当前搜索到的最好的搜索任务集合的状态进行判断
     *
     * @return 是否收敛
@@ -171,18 +285,23 @@ object ContextHolder {
       weights.map(_ * weightFactor) :+ math.sqrt(TaskBuilder.validationWeight)
     }
 
-    val bestParams = getBestParams
+    //归一化
+    val bestParams = getBestParams.map {
+      params =>
+        (for (i <- paramBoundaries.indices) yield {
+          val bottom = paramBoundaries(i)._1
+          val upper = paramBoundaries(i)._2
+          (params(i) - bottom) / (upper - bottom)
+        }).toArray[Double] :+ (params.last / this.idealValidation)
+    }
     //计算这些超参数数据（将这些超参数看成点）的中心
     val bestParamsCenter = MathUtil.calcMean(bestParams)
     //计算各条线到中心的平均距离，并且按照当前学习器学习到的各超参数的评估权重进行加权
     val clusterMeanDist = bestParams.map(SimilarityUtil.calcWeightedEuclideanDistance(_, bestParamsCenter, weights)).sum / bestParams.length
-    //计算各条线最大距离，并且按照当前学习器学习到的各超参数的评估权重进行加权
-    val paramDomainScales = paramBoundaries.map(boundPair => boundPair._2 - boundPair._1)
-    val maxDist = MathUtil.calcWeightedNorm(paramDomainScales :+ this.idealValidation, weights)
-    val idealMaxDist = MathUtil.calcWeightedNorm(Array.fill(paramDomainScales.length)(paramDomainScales.max)
-      :+ this.idealValidation, weights)
+
+    convergeRecBuffer += ((this.getRunTimes, clusterMeanDist))
 
     //如果各条线到中心的平均距离与各条线最大距离的比重小于某个阈值，就认为是收敛了
-    clusterMeanDist / maxDist <= TaskBuilder.convergedThreshold * maxDist / idealMaxDist
+    clusterMeanDist <= TaskBuilder.convergedThreshold
   }
 }

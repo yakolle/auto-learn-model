@@ -41,7 +41,8 @@ object DataTransformUtil {
     * @return selectedFeatureNames对应的features
     */
   def selectFeaturesFromAssembledData(data: DataFrame, selectedFeatureNames: Array[String]): DataFrame = new VectorSlicer()
-    .setInputCol("features").setNames(selectedFeatureNames).transform(data)
+    .setInputCol("features").setOutputCol("selectedFeatures").setNames(selectedFeatureNames).transform(data)
+    .drop("features").withColumnRenamed("selectedFeatures", "features")
 
   /**
     * 从Vector类型数据中获取features的name

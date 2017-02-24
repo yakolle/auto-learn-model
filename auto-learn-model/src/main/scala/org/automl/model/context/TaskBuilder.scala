@@ -31,7 +31,7 @@ object TaskBuilder {
 
   def loadData(sparkSession: SparkSession, args: Array[String]): DataFrame = {
     sparkSession.read.option("header", value = true).option("inferSchema", value = true)
-      .csv("E:\\work\\output\\ranking\\train_data.csv")
+      .csv("E:\\work\\output\\ranking\\train_data.csv").cache()
   }
 
   /**
@@ -77,6 +77,28 @@ object TaskBuilder {
   }
 
   /**
+    * 获取并行搜索的任务数量，可更加当前计算资源进行动态计算
+    *
+    * @param sparkSession 计算环境
+    * @return 并可行搜索的任务数量
+    */
+  def getBeamSearchNum(sparkSession: SparkSession) = 10
+
+  /**
+    * 获取收敛记录输出路径
+    *
+    * @return 收敛记录输出路径
+    */
+  def getConvergenceRecordOutputPath = "E:\\work\\output\\learn\\learnRec.csv"
+
+  /**
+    * 获取最好结果的输出路径
+    *
+    * @return 最好结果的输出路径
+    */
+  def getBestResultsOutputPath = "E:\\work\\output\\learn\\bestResults"
+
+  /**
     * 创建初始的探测超参数任务
     *
     * @param operators 算子序列原型
@@ -115,13 +137,6 @@ object TaskBuilder {
 
   def buildProbeAgent(buildNum: Int): Array[ProbeAgent] = (for (i <- 1 to buildNum) yield new ProbeAgent).toArray
 
-  /**
-    * 获取并行搜索的任务数量，可更加当前计算资源进行动态计算
-    *
-    * @param sparkSession 计算环境
-    * @return 并可行搜索的任务数量
-    */
-  def getBeamSearchNum(sparkSession: SparkSession) = 10
 
   /**
     * 创建参数学习评估器

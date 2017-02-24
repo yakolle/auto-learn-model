@@ -50,6 +50,9 @@ object MasterConsole {
       currentRunTimes = ContextHolder.getRunTimes
     }
 
+    ContextHolder.outputConvergenceRecord(TaskBuilder.getConvergenceRecordOutputPath)
+    ContextHolder.outputBestSearchResults(TaskBuilder.getBestResultsOutputPath)
+
     //探索任务结束
     agents.foreach(_.terminate())
     exeService.shutdown()

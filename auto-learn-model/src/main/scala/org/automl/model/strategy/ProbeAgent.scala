@@ -42,10 +42,12 @@ class ProbeAgent extends Runnable {
     val savepoint = task.getSavepoint
     if (savepoint.isEmpty) task.runPoint = 0
     else {
-      val runPointIndex = savepoint.indexWhere(_._1 > task.runPoint)
+      var runPointIndex = savepoint.indexWhere(_._1 > task.runPoint)
       if (0 == runPointIndex) task.runPoint = 0
       else {
-        val savepointTuple = if (runPointIndex < 0) savepoint.last else savepoint(runPointIndex - 1)
+        runPointIndex = if (runPointIndex < 0) savepoint.length - 1 else runPointIndex - 1
+        savepoint.trimEnd(savepoint.length - runPointIndex - 1)
+        val savepointTuple = savepoint(runPointIndex)
         //任务从savepoint点后开始运行
         task.runPoint = savepointTuple._1 + 1
         task.trainData = savepointTuple._2
@@ -77,15 +79,14 @@ class ProbeAgent extends Runnable {
             task.trainData = operator.run(task.trainData)
             task.testData = operator.transform(task.testData)
           }
-        //所有transform结束后，进行特征选择前，对数据进行保存
-        case operator: SiftFeaturesBase =>
+          //transform结束后，对数据进行保存
           savepoint += ((i, task.trainData, task.testData))
+        case operator: SiftFeaturesBase =>
           task.trainData = operator.run(task.trainData)
           task.testData = operator.transform(task.testData)
-        //特征筛选结束后，进行模型训练前，对数据进行保存
-        case operator: TrainBase =>
+          //特征筛选结束后，对数据进行保存
           savepoint += ((i, task.trainData, task.testData))
-          operator.run(task.trainData)
+        case operator: TrainBase => operator.run(task.trainData)
         case operator: ValidationBase => operator.run(task.trainData, task.getTrainer.getModel, task.testData)
       }
       task.runPoint += 1

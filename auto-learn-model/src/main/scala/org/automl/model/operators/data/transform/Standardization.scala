@@ -4,6 +4,7 @@ import java.io.{BufferedWriter, IOException}
 
 import org.apache.spark.ml.feature.{StandardScaler, StandardScalerModel}
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.types.StructType
 import org.automl.model.operators.BaseOperator
 
 
@@ -23,7 +24,7 @@ class Standardization extends TransformBase {
     * @return 经过处理后的数据
     */
   override def run(data: DataFrame): DataFrame = {
-    this.transModel = new StandardScaler().fit(data)
+    this.transModel = new StandardScaler().setInputCol("features").setOutputCol("transformedFeatures").fit(data)
     transform(data)
   }
 
@@ -33,7 +34,11 @@ class Standardization extends TransformBase {
     * @param data 数据（包含X,y），其中X为Vector[Double]类型
     * @return transform后的数据
     */
-  override def transform(data: DataFrame): DataFrame = this.transModel.transform(data)
+  override def transform(data: DataFrame): DataFrame = {
+    val transformedData = this.transModel.transform(data)
+    val schema = StructType(Array(transformedData.schema("label"), transformedData.schema("features")))
+    transformedData.sparkSession.createDataFrame(transformedData.drop("features").rdd, schema).select("features", "label")
+  }
 
   /**
     * 输出transformer的主要属性，以便别的程序可以利用这些属性，对新数据进行transform

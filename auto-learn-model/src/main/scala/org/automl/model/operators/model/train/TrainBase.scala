@@ -1,5 +1,7 @@
 package org.automl.model.operators.model.train
 
+import java.io.{BufferedWriter, IOException}
+
 import org.apache.spark.ml.classification.ClassificationModel
 import org.apache.spark.ml.util.MLWritable
 import org.apache.spark.sql.DataFrame
@@ -28,6 +30,15 @@ abstract class TrainBase extends BaseOperator {
     * @return 上次训练后得到的模型
     */
   def getModel: ClassificationModel[_, _] with MLWritable
+
+  /**
+    * 输出训练得到的model的主要参数，以便别的程序（不支持spark的程序）可以利用这些参数，重新构建练得到的model
+    *
+    * @param out 输出流
+    * @throws IOException 输出IO异常
+    */
+  @throws(classOf[IOException])
+  def explainModel(out: BufferedWriter)
 
   /**
     * 获取上次运行（调用run方法）后cv验证值
