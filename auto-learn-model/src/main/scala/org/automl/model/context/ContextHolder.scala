@@ -29,7 +29,6 @@ object ContextHolder {
   private var learner: LearnerBase = _
   private var scheduler: ProbeSchedulerBase = _
 
-  private var beamSearchNum = -1
   //超参数matrix，目前为止搜索的所有的超参数集合，最后一列是实际验证值
   private var params: ArrayBuffer[Array[Double]] = new ArrayBuffer[Array[Double]]
   //目前为止效果最好的搜索任务，第一个元素是算子序列（用算子序列，是方便取参数包括算子里别的属性），第二个是该次探索的实际验证值
@@ -337,7 +336,10 @@ object ContextHolder {
       val curDistDiff = math.abs(clusterMeanDist - lastClusterMeanDist)
       if (curDistDiff <= TaskBuilder.convergedTolerance) currentSteadyTimes += 1
       else {
-        if (currentSteadyTimes >= lastSteadyTimes) lastSteadyClusterMeanDist = lastClusterMeanDist
+        if (currentSteadyTimes >= lastSteadyTimes) {
+          lastSteadyClusterMeanDist = lastClusterMeanDist
+          lastSteadyTimes = currentSteadyTimes
+        }
         currentSteadyTimes = 0
       }
 

@@ -20,7 +20,7 @@ import scala.util.Random
   */
 object TaskBuilder {
   //学习器进行全部批量学习的时间间隔
-  var learnInterval = 100 * 1000
+  var learnInterval = 40 * 1000
   //最大搜索次数
   val maxIterations = 10000
   //最小搜索次数
@@ -30,7 +30,7 @@ object TaskBuilder {
   //验证值在欧式空间中的权重比例，最大值
   var maxValidationWeight = 0.95
   //是否收敛的评估阈值
-  var convergedThreshold = 1E-5
+  var convergedThreshold = 1E-2
   //收敛判断时稳定时的容忍阈值
   var convergedTolerance = 1E-10
   //收敛判断时最大稳定次数
