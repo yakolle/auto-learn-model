@@ -5,6 +5,7 @@ import org.automl.model.operators.BaseOperator
 import org.automl.model.operators.data.bagging.ABBagging
 import org.automl.model.operators.data.format.DataAssembler
 import org.automl.model.operators.data.sift.LassoSelector
+import org.automl.model.operators.data.transform.MinMaxMapper
 import org.automl.model.operators.model.train.LogisticRegressionTrain
 import org.automl.model.operators.model.validation.{AUCValidation, AssemblyValidation, ValidationBase}
 import org.automl.model.strategy.learn.{LearnerBase, LinearRegressionLearner}
@@ -24,10 +25,18 @@ object TaskBuilder {
   val maxIterations = 10000
   //最小搜索次数
   var minIterations = 100
-  //参数集合对应的验证值在欧式空间中的权重比例（参数集合和该参数集合对应的验证值构成整个参数的欧式空间）
-  var validationWeight = 0.5
-  //是否收敛的评估占比阈值
-  var convergedThreshold = 1E-4
+  //参数集合对应的验证值在欧式空间中的权重比例（参数集合和该参数集合对应的验证值构成整个参数的欧式空间），初始值
+  var initValidationWeight = 0.5
+  //验证值在欧式空间中的权重比例，最大值
+  var maxValidationWeight = 0.95
+  //是否收敛的评估阈值
+  var convergedThreshold = 1E-5
+  //收敛判断时稳定时的容忍阈值
+  var convergedTolerance = 1E-10
+  //收敛判断时最大稳定次数
+  var maxSteadyTimes = 20
+  //系统搜索稳定判断，其稳定次数（稳定衡量指标）采用线性增加几何下降策略，几何下降的比率
+  var steadyTimeDiveRatio = 0.7
 
   def loadData(sparkSession: SparkSession, args: Array[String]): DataFrame = {
     sparkSession.read.option("header", value = true).option("inferSchema", value = true)
@@ -43,7 +52,7 @@ object TaskBuilder {
   def loadOperators(args: Array[String]): Array[BaseOperator] = {
     val trainer = new LogisticRegressionTrain
     trainer.setValidators(Array[ValidationBase](new AUCValidation))
-    Array[BaseOperator](new ABBagging, new DataAssembler, new LassoSelector, trainer, new AUCValidation)
+    Array[BaseOperator](new ABBagging, new DataAssembler, new MinMaxMapper, new LassoSelector, trainer, new AUCValidation)
   }
 
   /**

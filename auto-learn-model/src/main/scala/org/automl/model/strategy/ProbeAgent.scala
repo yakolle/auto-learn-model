@@ -76,14 +76,14 @@ class ProbeAgent extends Runnable {
           task.testData = operator.run(task.testData)
         case operator: TransformBase =>
           if (operator.isOn) {
-            task.trainData = operator.run(task.trainData)
-            task.testData = operator.transform(task.testData)
+            task.trainData = operator.run(task.trainData).cache()
+            task.testData = operator.transform(task.testData).cache()
           }
           //transform结束后，对数据进行保存
           savepoint += ((i, task.trainData, task.testData))
         case operator: SiftFeaturesBase =>
-          task.trainData = operator.run(task.trainData)
-          task.testData = operator.transform(task.testData)
+          task.trainData = operator.run(task.trainData).cache()
+          task.testData = operator.transform(task.testData).cache()
           //特征筛选结束后，对数据进行保存
           savepoint += ((i, task.trainData, task.testData))
         case operator: TrainBase => operator.run(task.trainData)

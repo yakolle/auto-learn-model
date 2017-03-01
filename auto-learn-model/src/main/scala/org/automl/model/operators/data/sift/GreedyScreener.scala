@@ -13,7 +13,7 @@ import scala.util.Random
 /**
   * Created by zhangyikuo on 2017/1/12.
   *
-  * 该算子是一个backward greedy策略的筛选算子，需要配合批量选择算子（比如lasso）共同作用，起到shrink的作用
+  * 该算子是一个backward greedy策略的筛选算子，需要配合批量forward类型的选择算子（比如lasso）共同作用，起到shrink的作用
   */
 class GreedyScreener extends SiftFeaturesBase {
   this.operatorName = "greedyScreen"
@@ -27,7 +27,7 @@ class GreedyScreener extends SiftFeaturesBase {
   //greedy beam search的beam size
   private val beamSize = 3
 
-  //动态增益比率，按照Q学习过程进行更新
+  //动态增益比率，按照TD(forgottenFactor)学习过程进行更新
   private var gainRatio = 0.0
 
   //选择后的特征集合
