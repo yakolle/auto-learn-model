@@ -3,12 +3,13 @@ Based on concept of genetic algorithm to automatically learn the super parameter
 
 ##Usage:
 Many configurations could be found within TaskBuilder   <br>
-* [Required]    Modify TaskBuilder.loadData function, to load the trainning data.   <br>
-* [Required]    Modify TaskBuilder.getConvergenceRecordOutputPath function, to specify the output path of the records which logged the trace of converged state.    <br>
-* [Required]    Modify TaskBuilder.getBestResultsOutputPath function, to specify the output path of the best probing results.   <br>
-* [Optional]    Modify TaskBuilder.loadOperators function, to load suitable operators, or even you could define your own operator within operators package, and then load it.   <br>
-* [Optional]    Modify TaskBuilder.getBeamSearchNum function, to specify the number of probers, which depend on your calculating resources. <br>
-* [Optional]    Modify MasterConsole.initContext function, to initailize sparkSession, e.g., you could specify the running mode of your calculating platform here.  <br>
+* `[Required]`    Modify TaskBuilder.loadData function, to load the trainning data.   <br>
+* `[Required]`    Modify TaskBuilder.getConvergenceRecordOutputPath function, to specify the output path of the records which logged the trace of converged state.    <br>
+* `[Required]`    Modify TaskBuilder.getBestResultsOutputPath function, to specify the output path of the best probing results.   <br>
+* `[Optional]`    Modify TaskBuilder.loadOperators function, to load suitable operators, or even you could define your own operator within operators package, and then load it.   <br>
+* `[Optional]`    Modify TaskBuilder.getBeamSearchNum function, to specify the number of probers, which depend on your calculating resources. <br>
+* `[Optional]`    Modify MasterConsole.initContext function, to initailize sparkSession, e.g., you could specify the running mode of your calculating platform here.  <br>
+
 With the essential comprehension about other parameters and functions, you could change them for your own interests, or even just testing.  <br>
 
 
@@ -29,4 +30,5 @@ With the essential comprehension about other parameters and functions, you could
 * 可以更改TaskBuilder的loadOperators方法，来加载别的算子，或者可以在operators包下添加你自己的算子，然后再加载进来  <br>
 * 可以更改TaskBuilder的getBeamSearchNum方法，来指定同时有多少个agent在执行搜索任务，当然最好的方法是根据当前集群（单机）的计算资源来计算后确定    <br>
 * 可以更改MasterConsole的initContext方法，来指定运行模式（local、cluster等），初始化sparkSession   <br>
+
 至于其余的配置，建议了解参数或方法的意义和可能产生的影响后进行修改   <br>
