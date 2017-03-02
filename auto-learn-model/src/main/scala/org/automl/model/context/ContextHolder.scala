@@ -159,10 +159,12 @@ object ContextHolder {
     var validationSum = 0.0
     bestOperatorSequences.foreach {
       case (operatorChain, validation) =>
-        val paramArray = operatorChain.flatMap(operator => for (i <- 0 until operator.getParamNum) yield operator.getCurrentParam(i))
-        //计算评估残差
-        errSum += math.abs(learner.predict(paramArray) - validation)
-        validationSum += validation
+        if (null != operatorChain) {
+          val paramArray = operatorChain.flatMap(operator => for (i <- 0 until operator.getParamNum) yield operator.getCurrentParam(i))
+          //计算评估残差
+          errSum += math.abs(learner.predict(paramArray) - validation)
+          validationSum += validation
+        }
     }
     scheduler.setMaxEstimateAcceptRatio(errSum / validationSum)
   }

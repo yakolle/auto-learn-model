@@ -28,7 +28,7 @@ class GreedyScreener extends SiftFeaturesBase {
   private val beamSize = 3
 
   //动态增益比率，按照TD(forgottenFactor)学习过程进行更新
-  private var gainRatio = 0.0
+  private var gainRatio = gainThreshold
 
   //选择后的特征集合
   private var featureIDs: Array[String] = _
@@ -37,23 +37,25 @@ class GreedyScreener extends SiftFeaturesBase {
                                 maxPerChildNum: Int): Array[(Array[String], Double)] = {
     val children = new mutable.HashMap[Array[String], Double]
 
-    parents.foreach {
-      case (pFeatureNames, parentAUC) =>
-        val pAUC = if (parentAUC <= 0) {
-          val pTrainData = DataTransformUtil.selectFeaturesFromAssembledData(data, pFeatureNames)
-          AUCValidation.calcAUC(pTrainData, trainer.fit(pTrainData))
-        } else parentAUC
-        val droppingColBuffer = new ArrayBuffer[(String, Double)]
-        pFeatureNames.foreach {
-          feature =>
-            val cData = DataTransformUtil.selectFeaturesFromAssembledData(data, pFeatureNames.filter(_ != feature))
-            val cAUC = AUCValidation.calcAUC(cData, trainer.fit(cData))
-            if (cAUC > pAUC + gainThreshold) droppingColBuffer += ((feature, cAUC))
-        }
-        children ++= droppingColBuffer.sortBy(_._2)(Ordering[Double].reverse).take(maxPerChildNum).map {
-          case (droppingColName, curAUC) =>
-            (pFeatureNames.filter(_ != droppingColName), curAUC)
-        }
+    for (i <- parents.indices) {
+      val (pFeatureNames, parentAUC) = parents(i)
+      val pAUC = if (parentAUC <= 0) {
+        val pTrainData = DataTransformUtil.selectFeaturesFromAssembledData(data, pFeatureNames)
+        AUCValidation.calcAUC(pTrainData, trainer.fit(pTrainData))
+      } else parentAUC
+      parents(i) = (pFeatureNames, pAUC)
+
+      val droppingColBuffer = new ArrayBuffer[(String, Double)]
+      pFeatureNames.foreach {
+        feature =>
+          val cData = DataTransformUtil.selectFeaturesFromAssembledData(data, pFeatureNames.filter(_ != feature))
+          val cAUC = AUCValidation.calcAUC(cData, trainer.fit(cData))
+          if (cAUC > pAUC + gainThreshold) droppingColBuffer += ((feature, cAUC))
+      }
+      children ++= droppingColBuffer.sortBy(_._2)(Ordering[Double].reverse).take(maxPerChildNum).map {
+        case (droppingColName, curAUC) =>
+          (pFeatureNames.filter(_ != droppingColName), curAUC)
+      }
     }
 
     children.toArray
@@ -67,7 +69,8 @@ class GreedyScreener extends SiftFeaturesBase {
     * @return 筛选后的数据及特征，返回值为筛选后的数据
     */
   override def run(data: DataFrame): DataFrame = {
-    val maxSearchDepth = Random.nextInt(math.ceil(gainRatio / gainThreshold).toInt)
+    gainRatio = math.max(gainThreshold, gainRatio)
+    val maxSearchDepth = math.max(Random.nextInt(math.ceil(gainRatio / gainThreshold).toInt), 1)
 
     var totalGain = 0.0
     var depth = 0
@@ -85,9 +88,9 @@ class GreedyScreener extends SiftFeaturesBase {
         children = getNextGeneration(data, children, math.ceil(children.length.toDouble / beamSize.toDouble).toInt)
     }
 
-    gainRatio = (1 - forgottenFactor) * gainRatio + forgottenFactor * totalGain / depth.toDouble
+    if (depth > 0) gainRatio = (1 - forgottenFactor) * gainRatio + forgottenFactor * totalGain / depth.toDouble
 
-    if (depth > 0) this.featureIDs = parents.head._1 else this.featureIDs = null
+    this.featureIDs = parents.head._1
     transform(data)
   }
 
@@ -97,9 +100,7 @@ class GreedyScreener extends SiftFeaturesBase {
     * @param data 数据（包含X,y），其中X为Vector[Double]类型
     * @return 进过特征筛选后的数据
     */
-  override def transform(data: DataFrame): DataFrame = {
-    if (null != this.featureIDs) DataTransformUtil.selectFeaturesFromAssembledData(data, this.featureIDs) else data
-  }
+  override def transform(data: DataFrame): DataFrame = DataTransformUtil.selectFeaturesFromAssembledData(data, this.featureIDs)
 
   /**
     * 获取该算子目前所选择的特征ID数组

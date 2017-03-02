@@ -4,7 +4,7 @@ import org.apache.spark.ml.classification.ClassificationModel
 import org.apache.spark.ml.linalg.DenseVector
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.sql.DataFrame
 import org.automl.model.operators.BaseOperator
 
 /**
@@ -61,8 +61,8 @@ object AUCValidation {
     * @return 由model得出的预测得分
     */
   def predict(data: DataFrame, model: ClassificationModel[_, _]): RDD[(Double, Double)] = {
-    model.transform(data).select("probability", "label").rdd.map {
-      case Row(probabilities: DenseVector, label: Double) => (probabilities(1), label)
+    model.transform(data).select("probability", "label").rdd.map { row =>
+      (row.getAs[DenseVector](0)(1), row(1).toString.toDouble)
     }
   }
 
