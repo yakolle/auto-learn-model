@@ -22,7 +22,7 @@ object TaskBuilder {
   //学习器进行全部批量学习的时间间隔
   var learnInterval = 40 * 1000
   //最大搜索次数
-  val maxIterations = 10000
+  var maxIterations = 10000
   //最小搜索次数
   var minIterations = 100
   //参数集合对应的验证值在欧式空间中的权重比例（参数集合和该参数集合对应的验证值构成整个参数的欧式空间），初始值
@@ -44,6 +44,20 @@ object TaskBuilder {
   }
 
   /**
+    * 获取收敛记录输出路径
+    *
+    * @return 收敛记录输出路径
+    */
+  def getConvergenceRecordOutputPath = "E:\\work\\output\\learn\\learnRec.csv"
+
+  /**
+    * 获取最好结果的输出路径
+    *
+    * @return 最好结果的输出路径
+    */
+  def getBestResultsOutputPath = "E:\\work\\output\\learn\\bestResults"
+
+  /**
     * 加载算子，算子可以用配置文件的形式加载
     *
     * @param args 算子配置的一些属性，或者算子配置文件的地址
@@ -54,6 +68,14 @@ object TaskBuilder {
     trainer.setValidators(Array[ValidationBase](new AUCValidation))
     Array[BaseOperator](new ABBagging, new DataAssembler, new MinMaxMapper, new LassoSelector, trainer, new AUCValidation)
   }
+
+  /**
+    * 获取并行搜索的任务数量，可更加当前计算资源进行动态计算
+    *
+    * @param sparkSession 计算环境
+    * @return 并可行搜索的任务数量
+    */
+  def getBeamSearchNum(sparkSession: SparkSession) = 10
 
   /**
     * 初始化理想的验证值
@@ -84,28 +106,6 @@ object TaskBuilder {
     val trainingAndTrainedValidationWeight = (1.0, 1.0, -1.0, 0.0, 0.0)
     AssemblyValidation.setTrainingAndTrainedValidationWeight(trainingAndTrainedValidationWeight)
   }
-
-  /**
-    * 获取并行搜索的任务数量，可更加当前计算资源进行动态计算
-    *
-    * @param sparkSession 计算环境
-    * @return 并可行搜索的任务数量
-    */
-  def getBeamSearchNum(sparkSession: SparkSession) = 10
-
-  /**
-    * 获取收敛记录输出路径
-    *
-    * @return 收敛记录输出路径
-    */
-  def getConvergenceRecordOutputPath = "E:\\work\\output\\learn\\learnRec.csv"
-
-  /**
-    * 获取最好结果的输出路径
-    *
-    * @return 最好结果的输出路径
-    */
-  def getBestResultsOutputPath = "E:\\work\\output\\learn\\bestResults"
 
   /**
     * 创建初始的探测超参数任务
@@ -145,7 +145,6 @@ object TaskBuilder {
   }
 
   def buildProbeAgent(buildNum: Int): Array[ProbeAgent] = (for (i <- 1 to buildNum) yield new ProbeAgent).toArray
-
 
   /**
     * 创建参数学习评估器
