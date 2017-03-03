@@ -23,6 +23,8 @@ abstract class ProbeSchedulerBase {
 
   def setMaxEstimateAcceptRatio(maxEstimateAcceptRatio: Double) = this.maxEstimateAcceptRatio = maxEstimateAcceptRatio
 
+  def getMaxEstimateAcceptRatio = maxEstimateAcceptRatio
+
   /**
     * 根据学习过程中的超参数数据进行参数评估模型的学习
     *

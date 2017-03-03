@@ -4,6 +4,7 @@ import java.util.concurrent.{Executors, TimeUnit}
 
 import org.apache.spark.sql.SparkSession
 import org.automl.model.context.{ContextHolder, TaskBuilder}
+import org.automl.model.output.OutputHandler
 
 /**
   * Created by zhangyikuo on 2016/8/26.
@@ -55,7 +56,7 @@ object MasterConsole {
     exeService.shutdown()
     exeService.awaitTermination(beamSearchNum * TaskBuilder.learnInterval, TimeUnit.MILLISECONDS)
 
-    ContextHolder.outputConvergenceRecord(TaskBuilder.getConvergenceRecordOutputPath)
-    ContextHolder.outputBestSearchResults(TaskBuilder.getBestResultsOutputPath)
+    OutputHandler.outputConvergenceRecord(ContextHolder.getConvergeRecords, TaskBuilder.getConvergenceRecordOutputPath)
+    OutputHandler.outputBestSearchResults(ContextHolder.getBestOperatorSequences, TaskBuilder.getBestResultsOutputPath)
   }
 }

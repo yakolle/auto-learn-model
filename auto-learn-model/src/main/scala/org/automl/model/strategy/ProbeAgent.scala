@@ -10,11 +10,14 @@ import org.automl.model.operators.data.transform.TransformBase
 import org.automl.model.operators.model.train.TrainBase
 import org.automl.model.operators.model.validation.ValidationBase
 import org.automl.model.strategy.scheduler.ProbeSchedulerBase
+import org.slf4j.LoggerFactory
 
 /**
   * Created by zhangyikuo on 2016/8/19.
   */
 class ProbeAgent extends Runnable {
+  private val log = LoggerFactory.getLogger(this.getClass)
+
   var task: ProbeTask = _
   var scheduler: ProbeSchedulerBase = _
 
@@ -26,11 +29,16 @@ class ProbeAgent extends Runnable {
   }
 
   override def run() {
-    while (!stopFlag) {
-      run(task)
-      scheduler.onlineLearn(task.getParams :+ task.calcFinalValidation)
-      ContextHolder.feedback(task)
-      task = scheduler.getNextProbeTask(task, ContextHolder.getParams)
+    try
+        while (!stopFlag) {
+          run(task)
+          scheduler.onlineLearn(task.getParams :+ task.calcFinalValidation)
+          ContextHolder.feedback(task)
+          task = scheduler.getNextProbeTask(task, ContextHolder.getParams)
+        }
+    catch {
+      case e: Exception =>
+        log.warn("abnormally probe", e)
     }
   }
 

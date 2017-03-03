@@ -1,6 +1,7 @@
 package org.automl.model.operators.data.sift
 
 import org.apache.spark.ml.classification.LogisticRegression
+import org.apache.spark.ml.linalg.SparseVector
 import org.apache.spark.sql.DataFrame
 import org.automl.model.operators.BaseOperator
 import org.automl.model.utils.DataTransformUtil
@@ -41,8 +42,10 @@ class LassoSelector extends SiftFeaturesBase {
     val selectedColNames = for (i <- 0 until coefficients.size; if math.abs(coefficients(i)) > zeroDomain)
       yield colNames(i)
 
-    this.featureIDs = if (selectedColNames.length <= 0) Array(colNames(coefficients.argmax))
-    else selectedColNames.toArray
+    this.featureIDs = coefficients match {
+      case vector: SparseVector if 0 == vector.indices.length => colNames.take(1)
+      case _ => if (selectedColNames.length <= 0) Array(colNames(coefficients.argmax)) else selectedColNames.toArray
+    }
     transform(data)
   }
 
