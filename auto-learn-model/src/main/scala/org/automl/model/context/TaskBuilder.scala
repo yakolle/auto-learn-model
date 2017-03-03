@@ -33,6 +33,8 @@ object TaskBuilder {
   var convergedThreshold = 1E-2
   //收敛判断时稳定时的容忍阈值
   var convergedTolerance = 1E-10
+  //收敛记录buffer的大小
+  val convergeRecBufferSize = 10
   //收敛判断时最大稳定次数
   var maxSteadyTimes = 20
   //系统搜索稳定判断，其稳定次数（稳定衡量指标）采用线性增加几何下降策略，几何下降的比率
@@ -48,7 +50,7 @@ object TaskBuilder {
     *
     * @return 收敛记录输出路径
     */
-  def getConvergenceRecordOutputPath = "E:\\work\\output\\learn\\learnRec.csv"
+  def getConvergenceRecordOutputPath = "E:\\work\\output\\learn\\learnRec"
 
   /**
     * 获取最好结果的输出路径

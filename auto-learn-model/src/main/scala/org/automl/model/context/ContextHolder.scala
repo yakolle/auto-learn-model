@@ -7,6 +7,7 @@ import org.apache.spark.ml.linalg.Vectors
 import org.apache.spark.sql.types.{DoubleType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.automl.model.operators.BaseOperator
+import org.automl.model.output.OutputHandler
 import org.automl.model.strategy.ProbeTask
 import org.automl.model.strategy.learn.LearnerBase
 import org.automl.model.strategy.scheduler.ProbeSchedulerBase
@@ -37,7 +38,8 @@ object ContextHolder {
   private var lastClusterMeanDist = Double.MaxValue
 
   //收敛记录，格式为(runTimes, clusterMeanDist, maxEstimateAcceptRatio, bestParams)
-  private val convergeRecBuffer: ArrayBuffer[(Int, Double, Double, Array[Array[Double]])] = new ArrayBuffer[(Int, Double, Double, Array[Array[Double]])]
+  private val convergeRecBuffer: ArrayBuffer[(Int, Double, Double, Array[Array[Double]])] = new ArrayBuffer[(Int, Double, Double,
+    Array[Array[Double]])](TaskBuilder.convergeRecBufferSize)
 
   def getBestOperatorSequences = bestOperatorSequences
 
@@ -203,6 +205,12 @@ object ContextHolder {
     val clusterMeanDist = bestParams.map(SimilarityUtil.calcWeightedEuclideanDistance(_, bestParamsCenter, weights)).sum / bestParams.length
 
     convergeRecBuffer += ((this.getRunTimes, clusterMeanDist, scheduler.getMaxEstimateAcceptRatio, bestParams))
+    if (convergeRecBuffer.length >= TaskBuilder.convergeRecBufferSize) {
+      OutputHandler.outputConvergenceRecord(convergeRecBuffer, TaskBuilder.getConvergenceRecordOutputPath)
+      OutputHandler.outputBestSearchResults(bestOperatorSequences, TaskBuilder.getBestResultsOutputPath)
+
+      convergeRecBuffer.clear()
+    }
 
     //如果各条线到中心的平均距离小于某个阈值，并且稳定（变化不大）次数达到一定阈值，就认为是收敛了
     val converged = if (clusterMeanDist <= TaskBuilder.convergedThreshold) {

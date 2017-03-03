@@ -1,6 +1,8 @@
 package org.automl.model.output
 
 import java.io.{BufferedWriter, File, FileWriter, IOException}
+import java.text.SimpleDateFormat
+import java.util.Date
 
 import org.apache.commons.io.FileUtils
 import org.automl.model.operators.BaseOperator
@@ -39,7 +41,7 @@ object OutputHandler {
     }
 
     try
-      FileUtils.writeLines(new File(outputFilePath), lines)
+      FileUtils.writeLines(new File(outputFilePath + "." + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date)), lines)
     catch {
       case e: IOException =>
         e.printStackTrace()
@@ -53,7 +55,8 @@ object OutputHandler {
     * @param outputFilePath        搜索结果文件路径
     */
   def outputBestSearchResults(bestOperatorSequences: Array[(Array[BaseOperator], Double)], outputFilePath: String) {
-    val writer = new BufferedWriter(new FileWriter(outputFilePath))
+    val writer = new BufferedWriter(new FileWriter(outputFilePath + "." +
+      new SimpleDateFormat("yyyyMMddHHmmss").format(new Date)))
     val strBuffer = StringBuilder.newBuilder
 
     try {
