@@ -2,7 +2,6 @@ package org.automl.model
 
 import java.util.concurrent.{Executors, TimeUnit}
 
-import org.apache.spark.sql.SparkSession
 import org.automl.model.context.{ContextHolder, TaskBuilder}
 import org.automl.model.output.OutputHandler
 
@@ -10,15 +9,9 @@ import org.automl.model.output.OutputHandler
   * Created by zhangyikuo on 2016/8/26.
   */
 object MasterConsole {
-  private var sparkSession: SparkSession = _
-
-  def initContext(args: Array[String]) {
-    sparkSession = SparkSession.builder.master("local").appName("automl").getOrCreate()
-  }
-
   def main(args: Array[String]) {
     //初始化
-    initContext(args)
+    val sparkSession = TaskBuilder.initContext(args)
     ContextHolder.setSparkSession(sparkSession)
 
     val beamSearchNum = TaskBuilder.getBeamSearchNum(sparkSession)

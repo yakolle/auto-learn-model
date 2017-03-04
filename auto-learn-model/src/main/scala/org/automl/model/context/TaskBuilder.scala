@@ -32,13 +32,19 @@ object TaskBuilder {
   //是否收敛的评估阈值
   var convergedThreshold = 1E-2
   //收敛判断时稳定时的容忍阈值
-  var convergedTolerance = 1E-10
+  var convergedTolerance = 1E-6
   //收敛记录buffer的大小
   val convergeRecBufferSize = 10
   //收敛判断时最大稳定次数
-  var maxSteadyTimes = 20
+  var maxSteadyTimes = 10
   //系统搜索稳定判断，其稳定次数（稳定衡量指标）采用线性增加几何下降策略，几何下降的比率
   var steadyTimeDiveRatio = 0.7
+
+  def initContext(args: Array[String]) = {
+    SparkSession.builder.master("local[2]").appName("automl")
+      .config("spark.worker.timeout", "20").config("spark.executor.memory", "1g")
+      .getOrCreate()
+  }
 
   def loadData(sparkSession: SparkSession, args: Array[String]): DataFrame = {
     sparkSession.read.option("header", value = true).option("inferSchema", value = true)
@@ -77,7 +83,7 @@ object TaskBuilder {
     * @param sparkSession 计算环境
     * @return 并可行搜索的任务数量
     */
-  def getBeamSearchNum(sparkSession: SparkSession) = 10
+  def getBeamSearchNum(sparkSession: SparkSession) = 4
 
   /**
     * 初始化理想的验证值
