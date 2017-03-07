@@ -51,7 +51,10 @@ abstract class ProbeSchedulerBase {
     * @return 进行搜索的原型的索引
     */
   protected def choosePropagationLine(randomGenerator: Random, paramMatrix: Array[Array[Double]]): Int = {
-    val peerWeights = paramMatrix.map(params => SampleUtil.getNextNonNegativeTrimmedGaussian(randomGenerator, params.last, maxPeerFluctuationRatio / 3))
+    var minValidation = paramMatrix.minBy(_.last).last
+    minValidation -= 1E-6 * minValidation
+    val peerWeights = paramMatrix.map(params => SampleUtil.getNextNonNegativeTrimmedGaussian(randomGenerator,
+      params.last - minValidation, maxPeerFluctuationRatio / 3))
     SampleUtil.rouletteLikeSelect(peerWeights)
   }
 

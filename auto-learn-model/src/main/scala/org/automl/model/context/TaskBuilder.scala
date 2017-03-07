@@ -20,7 +20,7 @@ import scala.util.Random
   */
 object TaskBuilder {
   //学习器进行全部批量学习的时间间隔
-  var learnInterval = 40 * 1000
+  var learnInterval = 100 * 1000
   //最大搜索次数
   var maxIterations = 10000
   //最小搜索次数
@@ -36,7 +36,7 @@ object TaskBuilder {
   //收敛记录buffer的大小
   val convergeRecBufferSize = 10
   //收敛判断时最大稳定次数
-  var maxSteadyTimes = 10
+  var maxSteadyTimes = 20
   //系统搜索稳定判断，其稳定次数（稳定衡量指标）采用线性增加几何下降策略，几何下降的比率
   var steadyTimeDiveRatio = 0.7
 
