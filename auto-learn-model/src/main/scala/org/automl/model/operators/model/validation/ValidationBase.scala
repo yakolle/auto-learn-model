@@ -1,6 +1,6 @@
 package org.automl.model.operators.model.validation
 
-import org.apache.spark.ml.classification.ClassificationModel
+import org.apache.spark.ml.PredictionModel
 import org.apache.spark.sql.DataFrame
 import org.automl.model.operators.BaseOperator
 
@@ -21,7 +21,7 @@ abstract class ValidationBase extends BaseOperator {
     * @param testData  测试数据（包含X,y）
     * @return 本次模型验证得分数组，数组元素为2元组，格式为(trainValidation,testValidation)
     */
-  def run(trainData: DataFrame, model: ClassificationModel[_, _], testData: DataFrame): Array[(Double, Double)]
+  def run(trainData: DataFrame, model: PredictionModel[_, _], testData: DataFrame): Array[(Double, Double)]
 
   /**
     * 获取上次模型验证得分数组

@@ -48,7 +48,7 @@ object TaskBuilder {
 
   def loadData(sparkSession: SparkSession, args: Array[String]): DataFrame = {
     sparkSession.read.option("header", value = true).option("inferSchema", value = true)
-      .csv("E:\\work\\output\\ranking\\train_data.csv").cache()
+      .csv("E:\\work\\output\\train\\train_data.csv").cache()
   }
 
   /**
@@ -75,6 +75,10 @@ object TaskBuilder {
     val trainer = new LogisticRegressionTrain
     trainer.setValidators(Array[ValidationBase](new AUCValidation))
     Array[BaseOperator](new ABBagging, new DataAssembler, new MinMaxMapper, new LassoSelector, trainer, new AUCValidation)
+
+    //    val trainer = new GBTTrain
+    //    trainer.setValidators(Array[ValidationBase](new AUCValidation))
+    //    Array[BaseOperator](new ABBagging, new DataAssembler, trainer, new AUCValidation)
   }
 
   /**

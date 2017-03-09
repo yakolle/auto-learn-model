@@ -6,15 +6,14 @@ import org.automl.model.operators.BaseOperator
 /**
   * Created by zhangyikuo on 2016/10/12.
   */
-class ABBagging extends BaggingBase {
+class ABBagging(abRatio: Double = 1.0) extends BaggingBase {
   /**
     * 运行数据拆分算子，拆分前后都要对原始数据进行随机打乱
     *
-    * @param data    数据（包含X,y）
-    * @param abRatio 要拆分的两部分数据的比例
+    * @param data 数据（包含X,y）
     * @return A、B两部分数据，返回值为((aX,ay),(bX,by))
     */
-  override def run(data: DataFrame, abRatio: Double): (DataFrame, DataFrame) = {
+  override def run(data: DataFrame): (DataFrame, DataFrame) = {
     val Array(train, test) = data.randomSplit(Array(abRatio / (abRatio + 1), 1 / (abRatio + 1)))
     (train, test)
   }

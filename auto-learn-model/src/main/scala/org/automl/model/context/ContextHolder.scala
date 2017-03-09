@@ -174,66 +174,72 @@ object ContextHolder {
     * @return 是否收敛
     */
   def hasConverged: Boolean = {
-    //获取当前学习器对各个超参数的评估权重
-    var weights = learner.getWeights.map(math.abs)
-    //计算最终验证值的权重，按照TaskBuilder.validationWeight作为验证值同超参数集合的比重
-    val weightNorm = MathUtil.calcNorm(weights)
+    var converged = false
+    val curRunTimes = getRunTimes
 
-    //验证值的权重比例随着运行时间的增加逐渐增加，以防止非凸且极大值都差不多的情景下，参数变化剧烈导致无法收敛的问题
-    val validationWeight = TaskBuilder.initValidationWeight +
-      (TaskBuilder.maxValidationWeight - TaskBuilder.initValidationWeight) / (1.0 + math.exp(-getRunTimes / 64.0 + 3.7))
-
-    //x^2=a,t^2=1-a，其中a=TaskBuilder.validationWeight，x=validationWeight，t为原超参数变换后的norm
-    weights = if (0 == weightNorm) Array.fill(weights.length)(math.sqrt((1 - validationWeight) / weights.length))
+    if (convergeRecBuffer.nonEmpty && curRunTimes <= convergeRecBuffer.head._1) Thread.sleep(TaskBuilder.learnInterval)
     else {
-      val weightFactor = math.sqrt(1 - validationWeight) / weightNorm
-      weights.map(_ * weightFactor) :+ math.sqrt(validationWeight)
-    }
+      //获取当前学习器对各个超参数的评估权重
+      var weights = learner.getWeights.map(math.abs)
+      //计算最终验证值的权重，按照TaskBuilder.validationWeight作为验证值同超参数集合的比重
+      val weightNorm = MathUtil.calcNorm(weights)
 
-    //归一化
-    val bestParams = getBestParams.map {
-      params =>
-        (for (i <- paramBoundaries.indices) yield {
-          val bottom = paramBoundaries(i)._1
-          val upper = paramBoundaries(i)._2
-          (params(i) - bottom) / (upper - bottom)
-        }).toArray[Double] :+ (params.last / this.idealValidation)
-    }
-    //计算这些超参数数据（将这些超参数看成点）的中心
-    val bestParamsCenter = MathUtil.calcMean(bestParams)
-    //计算各条线到中心的平均距离，并且按照当前学习器学习到的各超参数的评估权重进行加权
-    val clusterMeanDist = bestParams.map(SimilarityUtil.calcWeightedEuclideanDistance(_, bestParamsCenter, weights)).sum / bestParams.length
+      //验证值的权重比例随着运行时间的增加逐渐增加，以防止非凸且极大值都差不多的情景下，参数变化剧烈导致无法收敛的问题
+      val validationWeight = TaskBuilder.initValidationWeight +
+        (TaskBuilder.maxValidationWeight - TaskBuilder.initValidationWeight) / (1.0 + math.exp(-curRunTimes / 64.0 + 3.7))
 
-    convergeRecBuffer += ((this.getRunTimes, clusterMeanDist, scheduler.getMaxEstimateAcceptRatio, bestParams))
-    if (convergeRecBuffer.length >= TaskBuilder.convergeRecBufferSize) {
-      OutputHandler.outputConvergenceRecord(convergeRecBuffer, TaskBuilder.getConvergenceRecordOutputPath)
-      OutputHandler.outputBestSearchResults(bestOperatorSequences, TaskBuilder.getBestResultsOutputPath)
-
-      convergeRecBuffer.clear()
-    }
-
-    //如果各条线到中心的平均距离小于某个阈值，并且稳定（变化不大）次数达到一定阈值，就认为是收敛了
-    val converged = if (clusterMeanDist <= TaskBuilder.convergedThreshold) {
-      val lastSteadyDistDiff = math.abs(clusterMeanDist - lastSteadyClusterMeanDist)
-      if (lastSteadyDistDiff <= TaskBuilder.convergedTolerance) {
-        lastSteadyTimes += 1
-        lastSteadyClusterMeanDist = clusterMeanDist
-      } else lastSteadyTimes = (lastSteadyTimes * TaskBuilder.steadyTimeDiveRatio).toInt
-      if (0 == lastSteadyTimes) lastSteadyClusterMeanDist = clusterMeanDist
-
-      val curDistDiff = math.abs(clusterMeanDist - lastClusterMeanDist)
-      if (curDistDiff <= TaskBuilder.convergedTolerance) currentSteadyTimes += 1
+      //x^2=a,t^2=1-a，其中a=TaskBuilder.validationWeight，x=validationWeight，t为原超参数变换后的norm
+      weights = if (0 == weightNorm) Array.fill(weights.length)(math.sqrt((1 - validationWeight) / weights.length))
       else {
-        if (currentSteadyTimes >= lastSteadyTimes) {
-          lastSteadyClusterMeanDist = lastClusterMeanDist
-          lastSteadyTimes = currentSteadyTimes
-        }
-        currentSteadyTimes = 0
+        val weightFactor = math.sqrt(1 - validationWeight) / weightNorm
+        weights.map(_ * weightFactor) :+ math.sqrt(validationWeight)
       }
 
-      math.max(lastSteadyTimes, currentSteadyTimes) > TaskBuilder.maxSteadyTimes
-    } else false
-    lastClusterMeanDist = clusterMeanDist
+      //归一化
+      val bestParams = getBestParams.map {
+        params =>
+          (for (i <- paramBoundaries.indices) yield {
+            val bottom = paramBoundaries(i)._1
+            val upper = paramBoundaries(i)._2
+            (params(i) - bottom) / (upper - bottom)
+          }).toArray[Double] :+ (params.last / this.idealValidation)
+      }
+      //计算这些超参数数据（将这些超参数看成点）的中心
+      val bestParamsCenter = MathUtil.calcMean(bestParams)
+      //计算各条线到中心的平均距离，并且按照当前学习器学习到的各超参数的评估权重进行加权
+      val clusterMeanDist = bestParams.map(SimilarityUtil.calcWeightedEuclideanDistance(_, bestParamsCenter, weights)).sum / bestParams.length
+
+      convergeRecBuffer += ((curRunTimes, clusterMeanDist, scheduler.getMaxEstimateAcceptRatio, bestParams))
+      if (convergeRecBuffer.length >= TaskBuilder.convergeRecBufferSize) {
+        OutputHandler.outputConvergenceRecord(convergeRecBuffer, TaskBuilder.getConvergenceRecordOutputPath)
+        OutputHandler.outputBestSearchResults(bestOperatorSequences, TaskBuilder.getBestResultsOutputPath)
+
+        convergeRecBuffer.clear()
+      }
+
+      //如果各条线到中心的平均距离小于某个阈值，并且稳定（变化不大）次数达到一定阈值，就认为是收敛了
+      if (clusterMeanDist <= TaskBuilder.convergedThreshold) {
+        val lastSteadyDistDiff = math.abs(clusterMeanDist - lastSteadyClusterMeanDist)
+        if (lastSteadyDistDiff <= TaskBuilder.convergedTolerance) {
+          lastSteadyTimes += 1
+          lastSteadyClusterMeanDist = clusterMeanDist
+        } else lastSteadyTimes = (lastSteadyTimes * TaskBuilder.steadyTimeDiveRatio).toInt
+        if (0 == lastSteadyTimes) lastSteadyClusterMeanDist = clusterMeanDist
+
+        val curDistDiff = math.abs(clusterMeanDist - lastClusterMeanDist)
+        if (curDistDiff <= TaskBuilder.convergedTolerance) currentSteadyTimes += 1
+        else {
+          if (currentSteadyTimes >= lastSteadyTimes) {
+            lastSteadyClusterMeanDist = lastClusterMeanDist
+            lastSteadyTimes = currentSteadyTimes
+          }
+          currentSteadyTimes = 0
+        }
+
+        converged = math.max(lastSteadyTimes, currentSteadyTimes) > TaskBuilder.maxSteadyTimes
+      }
+      lastClusterMeanDist = clusterMeanDist
+    }
 
     converged
   }

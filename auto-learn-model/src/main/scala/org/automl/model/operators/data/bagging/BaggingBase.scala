@@ -14,9 +14,8 @@ abstract class BaggingBase extends BaseOperator {
   /**
     * 运行数据拆分算子，拆分前后都要对原始数据进行随机打乱
     *
-    * @param data    数据（包含X,y）
-    * @param abRatio 要拆分的两部分数据的比例
+    * @param data 数据（包含X,y）
     * @return A、B两部分数据，返回值为((aX,ay),(bX,by))
     */
-  def run(data: DataFrame, abRatio: Double = 1): (DataFrame, DataFrame)
+  def run(data: DataFrame): (DataFrame, DataFrame)
 }

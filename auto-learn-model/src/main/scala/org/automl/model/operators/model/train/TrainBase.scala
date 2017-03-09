@@ -2,7 +2,7 @@ package org.automl.model.operators.model.train
 
 import java.io.{BufferedWriter, IOException}
 
-import org.apache.spark.ml.classification.ClassificationModel
+import org.apache.spark.ml.PredictionModel
 import org.apache.spark.ml.util.MLWritable
 import org.apache.spark.sql.DataFrame
 import org.automl.model.operators.BaseOperator
@@ -21,7 +21,7 @@ abstract class TrainBase extends BaseOperator {
     * @param data 数据（包含X,y）
     * @return 本次训练完成后的模型及cv验证值，返回值为(cv验证值,模型)
     */
-  def run(data: DataFrame, kFold: Int = 5): (Double, ClassificationModel[_, _] with MLWritable)
+  def run(data: DataFrame): (Double, PredictionModel[_, _] with MLWritable)
 
 
   /**
@@ -29,7 +29,7 @@ abstract class TrainBase extends BaseOperator {
     *
     * @return 上次训练后得到的模型
     */
-  def getModel: ClassificationModel[_, _] with MLWritable
+  def getModel: PredictionModel[_, _] with MLWritable
 
   /**
     * 输出训练得到的model的主要参数，以便别的程序（不支持spark的程序）可以利用这些参数，重新构建练得到的model
