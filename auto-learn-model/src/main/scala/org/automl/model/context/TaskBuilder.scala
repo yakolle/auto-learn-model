@@ -111,11 +111,11 @@ object TaskBuilder {
     * @param operators 算子列表，据此列表获取各验证算子验证权重
     */
   def initAssemblyValidation(operators: Array[BaseOperator]) {
-    val validatorWeights = Array((2.0, 3.0, -2.0, 0.0, 0.0))
+    val validatorWeights = Array((-1.0, 1.0, 0.0, 0.0, 0.0))
     AssemblyValidation.setValidatorWeights(validatorWeights)
-    val trainValidatorWeights = Array((2.0, 3.0, -2.0, 0.0, 0.0))
+    val trainValidatorWeights = Array((0.0, 1.0, 0.0, 0.0, 0.0))
     AssemblyValidation.setTrainValidatorWeights(trainValidatorWeights)
-    val trainingAndTrainedValidationWeight = (1.0, 1.0, -1.0, 0.0, 0.0)
+    val trainingAndTrainedValidationWeight = (1.0, 1.0, 0.0, 0.0, 0.0)
     AssemblyValidation.setTrainingAndTrainedValidationWeight(trainingAndTrainedValidationWeight)
   }
 
