@@ -55,82 +55,85 @@ object OutputHandler {
     * @param outputFilePath        搜索结果文件路径
     */
   def outputBestSearchResults(bestOperatorSequences: Array[(Array[BaseOperator], Double)], outputFilePath: String) {
-    val writer = new BufferedWriter(new FileWriter(outputFilePath + "." +
-      new SimpleDateFormat("yyyyMMddHHmmss").format(new Date)))
+    val fileName = outputFilePath + "." + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date)
+    val writer = new BufferedWriter(new FileWriter(fileName))
     val strBuffer = StringBuilder.newBuilder
 
     try {
-      bestOperatorSequences.foreach {
-        case (operatorChain, validation) =>
-          if (null != operatorChain) {
-            operatorChain.foreach {
-              case operator: EvaluationBase =>
-                writer.write(operator.getCanonicalName)
-                writer.newLine()
+      for (i <- bestOperatorSequences.indices) {
+        val (operatorChain, validation) = bestOperatorSequences(i)
+        if (null != operatorChain) {
+          operatorChain.foreach {
+            case operator: EvaluationBase =>
+              writer.write(operator.getCanonicalName)
+              writer.newLine()
 
-                strBuffer.clear()
-                operator.getEvaluations.foreach(strBuffer.append(_).append("\t"))
-                writer.write(strBuffer.substring(0, strBuffer.length - 1))
-                writer.newLine()
+              strBuffer.clear()
+              operator.getEvaluations.foreach(strBuffer.append(_).append("\t"))
+              writer.write(strBuffer.substring(0, strBuffer.length - 1))
+              writer.newLine()
 
-                writer.write("-----------------------------------------------------------")
-                writer.newLine()
-              case operator: TransformBase =>
-                writer.write(operator.getCanonicalName)
-                writer.newLine()
-                writer.write(if (operator.isOn) "on" else "off")
-                writer.newLine()
+              writer.write("-----------------------------------------------------------")
+              writer.newLine()
+            case operator: TransformBase =>
+              writer.write(operator.getCanonicalName)
+              writer.newLine()
+              writer.write(if (operator.isOn) "on" else "off")
+              writer.newLine()
 
-                if (operator.isOn) {
-                  operator.explain(writer)
-                  writer.newLine()
-                }
+              if (operator.isOn) {
+                operator.explain(writer)
+                writer.newLine()
+              }
 
-                writer.write("-----------------------------------------------------------")
-                writer.newLine()
-              case operator: SiftFeaturesBase =>
-                writer.write(operator.getCanonicalName)
-                writer.newLine()
+              writer.write("-----------------------------------------------------------")
+              writer.newLine()
+            case operator: SiftFeaturesBase =>
+              writer.write(operator.getCanonicalName)
+              writer.newLine()
 
-                strBuffer.clear()
-                operator.getFeatureIDs.foreach(strBuffer.append(_).append("\t"))
-                writer.write(strBuffer.substring(0, strBuffer.length - 1))
-                writer.newLine()
+              strBuffer.clear()
+              operator.getFeatureIDs.foreach(strBuffer.append(_).append("\t"))
+              writer.write(strBuffer.substring(0, strBuffer.length - 1))
+              writer.newLine()
 
-                writer.write("-----------------------------------------------------------")
-                writer.newLine()
-              case operator: TrainBase =>
-                writer.write(operator.getCanonicalName)
-                writer.newLine()
+              writer.write("-----------------------------------------------------------")
+              writer.newLine()
+            case operator: TrainBase =>
+              writer.write(operator.getCanonicalName)
+              writer.newLine()
 
-                operator.explainModel(writer)
-                writer.newLine()
+              val model = operator.getModel
+              val modelFileName = model.uid + i.toString
+              model.save(fileName + ".model\\" + modelFileName)
+              writer.write(modelFileName)
+              writer.newLine()
 
-                writer.write("-----------------------------------------------------------")
-                writer.newLine()
-              case operator: ValidationBase =>
-                writer.write(operator.getCanonicalName)
-                writer.newLine()
+              writer.write("-----------------------------------------------------------")
+              writer.newLine()
+            case operator: ValidationBase =>
+              writer.write(operator.getCanonicalName)
+              writer.newLine()
 
-                strBuffer.clear()
-                operator.getValidations.foreach {
-                  case (trainValidation, testValidation) =>
-                    strBuffer.append(trainValidation).append(",").append(testValidation).append("\t")
-                }
-                writer.write(strBuffer.substring(0, strBuffer.length - 1))
-                writer.newLine()
+              strBuffer.clear()
+              operator.getValidations.foreach {
+                case (trainValidation, testValidation) =>
+                  strBuffer.append(trainValidation).append(",").append(testValidation).append("\t")
+              }
+              writer.write(strBuffer.substring(0, strBuffer.length - 1))
+              writer.newLine()
 
-                writer.write("-----------------------------------------------------------")
-                writer.newLine()
-              case _ =>
-            }
-
-            writer.write("finalValidation=" + validation)
-            writer.newLine()
+              writer.write("-----------------------------------------------------------")
+              writer.newLine()
+            case _ =>
           }
-          writer.write("===========================================================")
+
+          writer.write("finalValidation=" + validation)
           writer.newLine()
-          writer.newLine()
+        }
+        writer.write("===========================================================")
+        writer.newLine()
+        writer.newLine()
       }
 
       writer.close()

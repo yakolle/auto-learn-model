@@ -95,14 +95,6 @@ class GreedyScreener extends SiftFeaturesBase {
   }
 
   /**
-    * 对数据进行特征筛选
-    *
-    * @param data 数据（包含X,y），其中X为Vector[Double]类型
-    * @return 进过特征筛选后的数据
-    */
-  override def transform(data: DataFrame): DataFrame = DataTransformUtil.selectFeaturesFromAssembledData(data, this.featureIDs)
-
-  /**
     * 获取该算子目前所选择的特征ID数组
     *
     * @return 算子目前所选择的特征ID数组

@@ -15,11 +15,15 @@ class OutlierHandler extends TransformBase {
   this.operatorName = "outlier"
   this.procedureType = "preprocess"
 
-  private val relativeError = 0.01
-  private val empiricalParams = Array.fill(OutlierHandler.getHandlerNum)(0.0)
+  this.params = (1.0 +: Array.fill(OutlierHandler.getHandlerNum)(0.0)).updated(2, 1.0)
 
   //outlier识别和处理方法的组合，one_hot形式
-  private var params: Array[Double] = _
+  this.empiricalParams = (1.0 +: Array.fill(OutlierHandler.getHandlerNum)(0.0)).updated(2, 1.0)
+  this.paramBoundaries = Array.fill(OutlierHandler.getHandlerNum + 1)((0.0, 1.0))
+  this.empiricalParamPaces = Array.fill(OutlierHandler.getHandlerNum + 1)(0.5)
+  this.paramTypes = Array.fill(OutlierHandler.getHandlerNum + 1)(BaseOperator.PARAM_TYPE_BOOLEAN)
+
+  private val relativeError = 0.01
 
   private var means: Array[Double] = _
   private var stds: Array[Double] = _
@@ -36,7 +40,7 @@ class OutlierHandler extends TransformBase {
     * @return 经过处理后的数据
     */
   override def run(data: DataFrame): DataFrame = {
-    val identifyMethod = OutlierHandler.extractHandlerParams(params)._1
+    val identifyMethod = OutlierHandler.extractHandlerParams(params.tail)._1
     if (OutlierHandler.IDENTIFY_METHOD_GAUSSIAN_MEAN == identifyMethod) {
       val statisticSummary = Statistics.colStats(data.rdd.map(rec => Vectors.dense(rec.toSeq.toArray.asInstanceOf[Array[Double]])))
       means = statisticSummary.mean.toArray
@@ -62,7 +66,7 @@ class OutlierHandler extends TransformBase {
     * @return transform后的数据
     */
   override def transform(data: DataFrame): DataFrame = {
-    val (identifyMethod, identifyParam) = OutlierHandler.extractHandlerParams(params)
+    val (identifyMethod, identifyParam) = OutlierHandler.extractHandlerParams(params.tail)
 
     val transformedData = if (OutlierHandler.IDENTIFY_METHOD_GAUSSIAN_MEAN == identifyMethod)
       data.rdd.map { line =>
@@ -96,7 +100,7 @@ class OutlierHandler extends TransformBase {
     * @throws IOException 输出IO异常
     */
   override def explain(out: BufferedWriter) {
-    val (identifyMethod, identifyParam) = OutlierHandler.extractHandlerParams(params)
+    val (identifyMethod, identifyParam) = OutlierHandler.extractHandlerParams(params.tail)
 
     if (OutlierHandler.IDENTIFY_METHOD_GAUSSIAN_MEAN == identifyMethod) {
       out.write("gaussian_mean")
@@ -142,36 +146,6 @@ class OutlierHandler extends TransformBase {
   }
 
   /**
-    * 获取超参数个数，包括是否开启（on)，on是第一个参数
-    *
-    * @return 超参数个数，如果没有超参数，返回0
-    */
-  override def getParamNum: Int = empiricalParams.length + 1
-
-  /**
-    * 获取warm start点（超参数经验搜索起始点）
-    *
-    * @param data       数据（包含X,y）
-    * @param paramIndex 第几个（从0开始）超参数
-    * @return 第paramIndex个超参数的经验值（warm start点）
-    */
-  override def getEmpiricalParam(data: DataFrame, paramIndex: Int) = {
-    if (0 == paramIndex) if (on) 1.0 else 0.0
-    else empiricalParams(paramIndex)
-  }
-
-  /**
-    * 获取超参数当前值
-    *
-    * @param paramIndex 第几个（从0开始）超参数
-    * @return 第paramIndex个超参数的当前值
-    */
-  override def getCurrentParam(paramIndex: Int): Double = {
-    if (0 == paramIndex) if (on) 1.0 else 0.0
-    else params(paramIndex - 1)
-  }
-
-  /**
     * 更新超参数，如果算子不需要参数可以不用重写该方法，否则必须重写该方法
     *
     * @param params 要更新的超参数
@@ -179,11 +153,11 @@ class OutlierHandler extends TransformBase {
   override def updateParam(params: Array[Double]) {
     this.params = if (0.0 == params.head) {
       this.on = false
-      Array.fill(empiricalParams.length)(0.0)
+      Array.fill(getParamNum + 1)(0.0)
     } else {
       this.on = true
       var isChosen = false
-      params.tail.map {
+      1.0 +: params.tail.map {
         param =>
           if (1.0 == param) {
             if (isChosen) 0.0

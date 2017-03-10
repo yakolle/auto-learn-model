@@ -75,10 +75,6 @@ object TaskBuilder {
     val trainer = new LogisticRegressionTrain
     trainer.setValidators(Array[ValidationBase](new AUCValidation))
     Array[BaseOperator](new ABBagging, new DataAssembler, new MinMaxMapper, new LassoSelector, trainer, new AUCValidation)
-
-    //    val trainer = new GBTTrain
-    //    trainer.setValidators(Array[ValidationBase](new AUCValidation))
-    //    Array[BaseOperator](new ABBagging, new DataAssembler, trainer, new AUCValidation)
   }
 
   /**

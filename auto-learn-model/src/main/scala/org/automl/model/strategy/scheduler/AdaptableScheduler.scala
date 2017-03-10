@@ -113,9 +113,8 @@ class AdaptableScheduler extends ProbeSchedulerBase {
       sinkingTimes += 1
     } while (nextEstimate < currentEstimate && 1 - nextEstimate / currentEstimate > maxEstimateAcceptRatioNice * randomGenerator.nextDouble)
 
-    insertIntoParamSchedulerCache(nextParams.toIndexedSeq, schedulerIndex)
-
     currentTask.updateParams(nextParams)
+    insertIntoParamSchedulerCache(currentTask.getParams.toIndexedSeq, schedulerIndex)
     currentTask
   }
 }

@@ -2,6 +2,7 @@ package org.automl.model.operators.data.sift
 
 import org.apache.spark.sql.DataFrame
 import org.automl.model.operators.BaseOperator
+import org.automl.model.utils.DataTransformUtil
 
 /**
   * Created by zhangyikuo on 2016/8/19.
@@ -25,7 +26,7 @@ abstract class SiftFeaturesBase extends BaseOperator {
     * @param data 数据（包含X,y）
     * @return 进过特征筛选后的数据
     */
-  def transform(data: DataFrame): DataFrame
+  def transform(data: DataFrame): DataFrame = DataTransformUtil.selectFeaturesFromAssembledData(data, this.getFeatureIDs)
 
   /**
     * 获取该算子目前所选择的特征ID数组
