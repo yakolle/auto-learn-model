@@ -13,6 +13,27 @@ class MutationScheduler extends ProbeSchedulerBase {
   //学习器中各参数权重的最大浮动，一方面是学习器的可信度配置（可动态调整），另一方面是加大系统扰动的可控因子
   private val maxMutationPointFluctuationRatio = 0.1
 
+  //fluctuationAmplifyFactor退火率，默认是10次退火到一半
+  private val fluctuationAnnealRatio = math.pow(0.5, 0.1)
+
+  //mutation浮动的放大因子，增大扰动
+  private var fluctuationAmplifyFactor = 1.0
+
+  /**
+    * 增大系统扰动
+    */
+  override def amplifyFluctuation() {
+    super.amplifyFluctuation()
+    fluctuationAmplifyFactor *= 2
+  }
+
+  /**
+    * 减小系统扰动
+    */
+  private def easeFluctuation() {
+    fluctuationAmplifyFactor = math.max(1.0, fluctuationAmplifyFactor * fluctuationAnnealRatio)
+  }
+
   /**
     * 获取下次要probe的超参数列表，子类需要重写该方法
     *
@@ -22,8 +43,8 @@ class MutationScheduler extends ProbeSchedulerBase {
     * @return 下次要probe的超参数列表
     */
   override def getNextParams(randomGenerator: Random, currentTask: ProbeTask, paramMatrix: Array[Array[Double]]): Array[Double] = {
-    //对变异点进行抽样，将学习器的各参数权重看成各参数重要程度的概率
-    val weights = learner.getWeights.map(wIt => SampleUtil.getNextNonNegativeTrimmedGaussian(randomGenerator, math.abs(wIt),
+    //用学习器的各参数重要程度，对变异点进行抽样
+    val weights = learner.getParamImportances.map(wIt => SampleUtil.getNextNonNegativeTrimmedGaussian(randomGenerator, math.abs(wIt),
       maxMutationPointFluctuationRatio / 3))
     val mutationPoint = SampleUtil.rouletteLikeSelect(weights)
     //根据参数序列中的变异点找到该参数所属算子的算子索引
@@ -39,7 +60,9 @@ class MutationScheduler extends ProbeSchedulerBase {
       var fluctuation = math.abs(operator.getCurrentParam(offset) - operator.getEmpiricalParam(null, offset)) +
         operator.getEmpiricalParamPace(null, offset) * math.abs(randomGenerator.nextGaussian)
       fluctuation = if (randomGenerator.nextBoolean) randomGenerator.nextDouble * fluctuation else -randomGenerator.nextDouble * fluctuation
-      param = operator.getEmpiricalParam(null, offset) + fluctuation
+      param = operator.getEmpiricalParam(null, offset) + fluctuation * fluctuationAmplifyFactor
+      easeFluctuation()
+
       val (bottom, upper) = operator.getParamBoundary(null, offset)
       param = if (param > upper) upper else if (param < bottom) bottom else param
       if (BaseOperator.PARAM_TYPE_INT == operator.getParamType(offset)) param = math.round(param)

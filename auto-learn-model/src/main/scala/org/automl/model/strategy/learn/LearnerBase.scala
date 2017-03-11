@@ -29,6 +29,13 @@ abstract class LearnerBase extends Cloneable {
   def predict(paramArray: Array[Double]): Double
 
   /**
+    * 获取各超参数重要程度评估，而超参数的权重有可能表示重要程度，但也有可能只是系数而已，取决于使用哪种学习器
+    *
+    * @return 各超参数重要程度评估
+    */
+  def getParamImportances = getWeights
+
+  /**
     * 获取各超参数的权重
     *
     * @return 各超参数的权重
@@ -40,7 +47,7 @@ abstract class LearnerBase extends Cloneable {
     *
     * @return 各超参数的权重，及一些必要参数
     */
-  def getAllWeights: Array[Double]
+  def getAllWeights: Array[Double] = getWeights
 
   /**
     * clone方法

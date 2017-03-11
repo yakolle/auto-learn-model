@@ -1,5 +1,6 @@
 package org.automl.model.strategy.learn
 
+import org.apache.spark.ml.feature.MinMaxScaler
 import org.apache.spark.ml.regression.LinearRegression
 import org.apache.spark.sql.DataFrame
 import org.automl.model.utils.MathUtil
@@ -19,16 +20,26 @@ class LinearRegressionLearner extends LearnerBase {
   //截距项
   private var intercept: Double = 0.0
 
+  //归一化后的系数向量
+  private var normalizedCoefficients: Array[Double] = _
+
   /**
     * 根据学习过程中的超参数数据进行参数评估模型的学习
     *
     * @param params 学习过程中的超参数数据，所有超参数assemble为Vector[Double]类型，验证值为其label
     */
   override def learn(params: DataFrame) {
-    val lmModel = new LinearRegression().setMaxIter(maxIterations).setRegParam(lambda).setElasticNetParam(elasticNetParam).fit(params)
+    val model = new LinearRegression().setMaxIter(maxIterations).setRegParam(lambda).setElasticNetParam(elasticNetParam).fit(params)
+
+    val nzParams = new MinMaxScaler().setInputCol("features").setOutputCol("transformedFeatures").fit(params).transform(params)
+    val nzModel = new LinearRegression().setMaxIter(maxIterations).setRegParam(lambda).setElasticNetParam(elasticNetParam)
+      .setFeaturesCol("transformedFeatures").fit(nzParams)
+
     this.synchronized {
-      coefficients = lmModel.coefficients.toArray
-      intercept = lmModel.intercept
+      coefficients = model.coefficients.toArray
+      intercept = model.intercept
+
+      normalizedCoefficients = nzModel.coefficients.toArray
     }
   }
 
@@ -60,6 +71,13 @@ class LinearRegressionLearner extends LearnerBase {
   override def predict(param: Array[Double]): Double = MathUtil.dot(coefficients, param) + intercept
 
   /**
+    * 获取各超参数重要程度评估，而超参数的权重有可能表示重要程度，但也有可能只是系数而已，取决于使用哪种学习器
+    *
+    * @return 各超参数重要程度评估
+    */
+  override def getParamImportances: Array[Double] = normalizedCoefficients
+
+  /**
     * 获取各超参数的权重
     *
     * @return 各超参数的权重
@@ -81,6 +99,7 @@ class LinearRegressionLearner extends LearnerBase {
   override def clone: LearnerBase = {
     val copy = super.clone.asInstanceOf[LinearRegressionLearner]
     copy.coefficients = this.coefficients.clone
+    copy.normalizedCoefficients = this.normalizedCoefficients.clone
     copy
   }
 }

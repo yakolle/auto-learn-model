@@ -34,6 +34,13 @@ class AdaptableScheduler extends ProbeSchedulerBase {
   }
 
   /**
+    * 增大系统扰动
+    */
+  override def amplifyFluctuation() {
+    schedulerArray.foreach(_.amplifyFluctuation())
+  }
+
+  /**
     * 更新参数对应策略的实际收益，并将该参数对应cache里的条目移除
     *
     * @param params     参数集合
@@ -95,9 +102,11 @@ class AdaptableScheduler extends ProbeSchedulerBase {
       if (currentParams.length <= 1) schedulerWeights(0) = 0.0
 
       //按照各策略历史收益进行抽样选择
+      var minWeight = schedulerWeights.min
+      minWeight -= 1E-6 * minWeight
       val weights = schedulerWeights.map {
         wIt =>
-          val weight = SampleUtil.getNextGaussian(randomGenerator, wIt, maxWeightFluctuationRatio)
+          val weight = SampleUtil.getNextGaussian(randomGenerator, wIt - minWeight, maxWeightFluctuationRatio)
           if (weight < 0.0) 0.0 else weight
       }
       schedulerIndex = SampleUtil.rouletteLikeSelect(weights)

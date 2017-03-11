@@ -12,6 +12,27 @@ class RegressionScheduler extends ProbeSchedulerBase {
   //第一次探测结束后探测的步幅比率
   private val initScorePaceRatio = 0.1
 
+  //paceAmplifyFactor退火率，默认是10次退火到一半
+  private val paceAmplificationAnnealRatio = math.pow(0.5, 0.1)
+
+  //每次探测步幅的放大因子，扩大步幅，增大扰动
+  private var paceAmplifyFactor = 1.0
+
+  /**
+    * 增大系统扰动
+    */
+  override def amplifyFluctuation() {
+    super.amplifyFluctuation()
+    paceAmplifyFactor *= 2
+  }
+
+  /**
+    * 减小系统扰动
+    */
+  private def easeFluctuation() {
+    paceAmplifyFactor = math.max(1.0, paceAmplifyFactor * paceAmplificationAnnealRatio)
+  }
+
   /**
     * 获取下次要probe的超参数列表，子类需要重写该方法
     *
@@ -49,6 +70,8 @@ class RegressionScheduler extends ProbeSchedulerBase {
       }
       nextPace /= weightSum
     } else nextPace = chosenRowValue * initScorePaceRatio
+    nextPace *= paceAmplifyFactor
+    easeFluctuation()
 
     //对计算得到的下步搜索步幅（验证值），按照lcoalLearner的权重进行参数步幅分配，分配的方式按照欧式空间中的欧式长度进行分解
     val paramWeights = localLearner.getWeights

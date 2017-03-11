@@ -19,7 +19,7 @@ class RFTrain(kFold: Int = 5) extends TrainBase {
   this.params = Array(0.0, 0.0, 1.0, 32.0, 5.0, 1.0, 20.0, 1.0)
 
   this.empiricalParams = Array(0.0, 0.0, 1.0, 32.0, 5.0, 1.0, 20.0, 1.0)
-  this.paramBoundaries = Array((0.0, 5.0), (0.0, 1.0), (0.0, 1.0), (2.0, 1024.0), (1.0, 10.0), (1.0, 30.0), (1.0, 200.0), (0.5, 1.0))
+  this.paramBoundaries = Array((0.0, 5.0), (0.05, 1.0), (0.0, 1.0), (2.0, 1024.0), (1.0, 10.0), (1.0, 30.0), (1.0, 200.0), (0.5, 1.0))
   this.empiricalParamPaces = Array(1.0, 0.05, 0.5, 1.0, 1.0, 1.0, 1.0, 0.02)
   this.paramTypes = Array(BaseOperator.PARAM_TYPE_INT, BaseOperator.PARAM_TYPE_DOUBLE, BaseOperator.PARAM_TYPE_BOOLEAN,
     BaseOperator.PARAM_TYPE_INT, BaseOperator.PARAM_TYPE_INT, BaseOperator.PARAM_TYPE_INT, BaseOperator.PARAM_TYPE_INT,

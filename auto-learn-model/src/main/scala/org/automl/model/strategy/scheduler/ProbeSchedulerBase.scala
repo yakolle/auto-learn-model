@@ -26,6 +26,13 @@ abstract class ProbeSchedulerBase {
   def getMaxEstimateAcceptRatio = maxEstimateAcceptRatio
 
   /**
+    * 增大系统扰动
+    */
+  def amplifyFluctuation() {
+    maxEstimateAcceptRatio = math.min(1.0, maxEstimateAcceptRatio + (1 - maxEstimateAcceptRatio) / maxSinkingTimes)
+  }
+
+  /**
     * 根据学习过程中的超参数数据进行参数评估模型的学习
     *
     * @param paramData 学习过程中的超参数数据
