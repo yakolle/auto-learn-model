@@ -10,6 +10,8 @@ import scala.util.Random
   * Created by zhangyikuo on 2016/8/23.
   */
 class MutationScheduler extends ProbeSchedulerBase {
+  private val mutationPointRandomGenerator = Random
+
   //学习器中各参数权重的最大浮动，一方面是学习器的可信度配置（可动态调整），另一方面是加大系统扰动的可控因子
   private val maxMutationPointFluctuationRatio = 0.1
 
@@ -37,15 +39,14 @@ class MutationScheduler extends ProbeSchedulerBase {
   /**
     * 获取下次要probe的超参数列表，子类需要重写该方法
     *
-    * @param randomGenerator 随机源生成器
-    * @param currentTask     当前probe任务
-    * @param paramMatrix     超参数数据
+    * @param currentTask 当前probe任务
+    * @param paramMatrix 超参数数据
     * @return 下次要probe的超参数列表
     */
-  override def getNextParams(randomGenerator: Random, currentTask: ProbeTask, paramMatrix: Array[Array[Double]]): Array[Double] = {
+  override def getNextParams(currentTask: ProbeTask, paramMatrix: Array[Array[Double]]): Array[Double] = {
     //用学习器的各参数重要程度，对变异点进行抽样
-    val weights = learner.getParamImportances.map(wIt => SampleUtil.getNextNonNegativeTrimmedGaussian(randomGenerator, math.abs(wIt),
-      maxMutationPointFluctuationRatio / 3))
+    val weights = learner.getParamImportances.map(wIt => SampleUtil.getNextNonNegativeTrimmedGaussian(mutationPointRandomGenerator,
+      math.abs(wIt), maxMutationPointFluctuationRatio / 3))
     val mutationPoint = SampleUtil.rouletteLikeSelect(weights)
     //根据参数序列中的变异点找到该参数所属算子的算子索引
     currentTask.runPoint = currentTask.getRunPoint(mutationPoint)

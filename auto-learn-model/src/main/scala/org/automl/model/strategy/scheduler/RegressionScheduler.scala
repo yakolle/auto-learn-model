@@ -3,8 +3,6 @@ package org.automl.model.strategy.scheduler
 import org.automl.model.operators.BaseOperator
 import org.automl.model.strategy.ProbeTask
 
-import scala.util.Random
-
 /**
   * Created by zhangyikuo on 2016/8/23.
   */
@@ -36,14 +34,13 @@ class RegressionScheduler extends ProbeSchedulerBase {
   /**
     * 获取下次要probe的超参数列表，子类需要重写该方法
     *
-    * @param randomGenerator 随机源生成器
-    * @param currentTask     当前probe任务
-    * @param paramMatrix     超参数数据
+    * @param currentTask 当前probe任务
+    * @param paramMatrix 超参数数据
     * @return 下次要probe的超参数列表
     */
-  override def getNextParams(randomGenerator: Random, currentTask: ProbeTask, paramMatrix: Array[Array[Double]]): Array[Double] = {
+  override def getNextParams(currentTask: ProbeTask, paramMatrix: Array[Array[Double]]): Array[Double] = {
     //轮盘选择要进行繁衍的某条线
-    val chosenRow = paramMatrix(choosePropagationLine(randomGenerator, paramMatrix))
+    val chosenRow = paramMatrix(choosePropagationLine(paramMatrix))
     val chosenRowValue: Double = chosenRow.last
 
     //获取与当前搜索线验证值差异值最大的和最小的差异值

@@ -2,7 +2,7 @@ package org.automl.model.context
 
 import org.automl.model.operators.BaseOperator
 import org.automl.model.strategy.ProbeTask
-import org.automl.model.utils.MathUtil
+import org.automl.model.utils.{MathUtil, SimilarityUtil}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -14,6 +14,9 @@ object ParamHandler {
   private val params: ArrayBuffer[Array[Double]] = new ArrayBuffer[Array[Double]]
   //超参数matrix各行到原点的距离
   private val paramDistances: ArrayBuffer[Double] = new ArrayBuffer[Double]
+
+  private var minParamDistance = Double.MaxValue
+  private var maxParamDistance = Double.MinValue
 
   //各超参数的范围
   private var paramBoundaries: Array[(Double, Double)] = _
@@ -40,6 +43,9 @@ object ParamHandler {
 
       paramDistances.synchronized {
         paramDistances += norm
+
+        minParamDistance = math.min(minParamDistance, norm)
+        maxParamDistance = math.max(maxParamDistance, norm)
       }
     }
   }
@@ -53,6 +59,11 @@ object ParamHandler {
 
   def getBestOperatorSequences = bestOperatorSequences
 
+  /**
+    * 初始化效果最好的搜索任务buffer
+    *
+    * @param size buffer大小
+    */
   def initBestOperatorSequences(size: Int) {
     bestOperatorSequences = new Array[(Array[BaseOperator], Double)](size)
     for (i <- 0 until size) bestOperatorSequences(i) = (null, Double.MinValue)
@@ -98,5 +109,39 @@ object ParamHandler {
       }
       params :+ validation
     }
+  }
+
+  /**
+    * 判断新参数和历史参数是否相似
+    *
+    * @param currentParams 当前参数
+    * @param nextParams    新参数
+    * @return 新参数和历史参数是否相似
+    */
+  def isUniqueParam(currentParams: Array[Double], nextParams: Array[Double]): Boolean = {
+    val nextParamNorm = MathUtil.calcNorm(nextParams)
+
+    val distanceSpan = maxParamDistance - minParamDistance
+    //先找出以原点为圆心的超球面上的所有相似点
+    var similarIndices = for (i <- paramDistances.indices; if math.abs(nextParamNorm - paramDistances(i)) / distanceSpan <
+      TaskBuilder.paramSimilarityZeroDomain) yield i
+    //再找出实际距离很近的所有相似点
+    similarIndices = for (i <- similarIndices.indices; if SimilarityUtil.calcEuclideanDistance(params(similarIndices(i)).dropRight(1),
+      nextParams) / distanceSpan < TaskBuilder.paramSimilarityZeroDomain) yield similarIndices(i)
+    //过滤掉currentParams代表的点
+    similarIndices = for (i <- similarIndices.indices; if SimilarityUtil.calcEuclideanDistance(params(similarIndices(i)).dropRight(1),
+      currentParams) / distanceSpan >= TaskBuilder.paramSimilarityZeroDomain) yield similarIndices(i)
+
+    similarIndices.isEmpty
+  }
+
+  /**
+    * 获取超参数matrix paramIndex列的最小最大值
+    *
+    * @param paramIndex 超参数matrix 第paramIndex列（第一列为0）
+    * @return 超参数matrix paramIndex列的最小最大值
+    */
+  def getCurrentParamMinMax(paramIndex: Int): (Double, Double) = {
+    (params.minBy(_ (paramIndex)).apply(paramIndex), params.maxBy(_ (paramIndex)).apply(paramIndex))
   }
 }

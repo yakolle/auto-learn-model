@@ -11,6 +11,9 @@ import scala.util.Random
   * Created by zhangyikuo on 2016/8/19.
   */
 abstract class ProbeSchedulerBase {
+  protected val randomGenerator = Random
+  protected val propagationRandomGenerator = Random
+
   var learner: LearnerBase = _
 
   //对已经探测过的线进行轮盘选择时，上下浮动的最大比率，当然是按照每条线的实际验证值进行轮盘选择
@@ -53,14 +56,13 @@ abstract class ProbeSchedulerBase {
   /**
     * 根据历史超参数的实际评估值抽样选择要进行搜索的原型（即基于此做扩展搜索）
     *
-    * @param randomGenerator 随机源生产器
-    * @param paramMatrix     超参数数据
+    * @param paramMatrix 超参数数据
     * @return 进行搜索的原型的索引
     */
-  protected def choosePropagationLine(randomGenerator: Random, paramMatrix: Array[Array[Double]]): Int = {
+  protected def choosePropagationLine(paramMatrix: Array[Array[Double]]): Int = {
     var minValidation = paramMatrix.minBy(_.last).last
     minValidation -= 1E-6 * minValidation
-    val peerWeights = paramMatrix.map(params => SampleUtil.getNextNonNegativeTrimmedGaussian(randomGenerator,
+    val peerWeights = paramMatrix.map(params => SampleUtil.getNextNonNegativeTrimmedGaussian(propagationRandomGenerator,
       params.last - minValidation, maxPeerFluctuationRatio / 3))
     SampleUtil.rouletteLikeSelect(peerWeights)
   }
@@ -68,12 +70,11 @@ abstract class ProbeSchedulerBase {
   /**
     * 获取下次要probe的超参数列表，子类需要重写该方法
     *
-    * @param randomGenerator 随机源生产器
-    * @param currentTask     当前probe任务
-    * @param paramMatrix     超参数数据
+    * @param currentTask 当前probe任务
+    * @param paramMatrix 超参数数据
     * @return 下次要probe的超参数列表
     */
-  def getNextParams(randomGenerator: Random, currentTask: ProbeTask, paramMatrix: Array[Array[Double]]): Array[Double]
+  def getNextParams(currentTask: ProbeTask, paramMatrix: Array[Array[Double]]): Array[Double]
 
   /**
     * 获取下次要probe的任务，主要是获取新的要probe的超参数，该方法为框架性方法，是提供给外部获取任务的接口，子类无需重写该方法
@@ -86,7 +87,6 @@ abstract class ProbeSchedulerBase {
     //任务运行点置0
     currentTask.runPoint = 0
 
-    val randomGenerator = Random
     val currentParams = currentTask.getParams
     val currentEstimate = currentTask.getFinalValidation
 
@@ -95,7 +95,7 @@ abstract class ProbeSchedulerBase {
     var maxEstimateAcceptRatioNice = maxEstimateAcceptRatio
     var sinkingTimes = 0
     do {
-      nextParams = getNextParams(randomGenerator, currentTask, paramMatrix)
+      nextParams = getNextParams(currentTask, paramMatrix)
       nextEstimate = learner.predict(nextParams)
       /*
       如果评估值大于当前任务的验证值，或者虽然小于但仍然在容许的限度范围内，就认为新生成的参数集合是可探测的,

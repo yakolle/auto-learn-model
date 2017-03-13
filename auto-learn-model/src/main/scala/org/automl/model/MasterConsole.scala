@@ -14,12 +14,12 @@ object MasterConsole {
     val sparkSession = TaskBuilder.initContext(args)
     ContextHolder.setSparkSession(sparkSession)
 
-    val beamSearchNum = TaskBuilder.getBeamSearchNum(sparkSession)
     val data = TaskBuilder.loadData(sparkSession, args)
     val operators = TaskBuilder.loadOperators(args)
     TaskBuilder.initAssemblyValidation(operators)
     TaskBuilder.initIdealValidation(operators)
-    ParamHandler.initBestOperatorSequences(beamSearchNum)
+    ParamHandler.initBestOperatorSequences(TaskBuilder.bestResultNum)
+    val beamSearchNum = TaskBuilder.getBeamSearchNum(sparkSession)
     val tasks = TaskBuilder.buildProbeTask(operators, data, beamSearchNum)
     val agents = TaskBuilder.buildProbeAgent(beamSearchNum)
     val scheduler = TaskBuilder.getScheduler

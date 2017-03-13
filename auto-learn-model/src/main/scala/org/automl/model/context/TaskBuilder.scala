@@ -25,10 +25,15 @@ object TaskBuilder {
   var maxIterations = 10000
   //最小搜索次数
   var minIterations = 100
+
+  //最好结果缓存大小
+  var bestResultNum = 10
+
   //参数集合对应的验证值在欧式空间中的权重比例（参数集合和该参数集合对应的验证值构成整个参数的欧式空间），初始值
   var initValidationWeight = 0.5
   //验证值在欧式空间中的权重比例，最大值
   var maxValidationWeight = 0.95
+
   //是否收敛的评估阈值
   var convergedThreshold = 1E-2
   //收敛判断时稳定时的容忍阈值
@@ -39,6 +44,9 @@ object TaskBuilder {
   var maxSteadyTimes = 20
   //系统搜索稳定判断，其稳定次数（稳定衡量指标）采用线性增加几何下降策略，几何下降的比率
   var steadyTimeDiveRatio = 0.7
+
+  //超参数相似度阈值，如果小于该阈值，就认为两个超参数是一样的
+  var paramSimilarityZeroDomain = 1E-6
 
   def initContext(args: Array[String]) = {
     SparkSession.builder.master("local[2]").appName("automl")
