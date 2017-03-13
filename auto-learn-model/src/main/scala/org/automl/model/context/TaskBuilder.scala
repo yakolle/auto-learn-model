@@ -148,7 +148,7 @@ object TaskBuilder {
       new ProbeTask(newOperators, data)
     }
     //保存每个超参数的边界
-    ContextHolder.setParamBoundaries(paramBoundaries.toArray)
+    ParamHandler.setParamBoundaries(paramBoundaries.toArray)
     tasks.toArray
   }
 

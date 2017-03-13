@@ -1,6 +1,6 @@
 package org.automl.model.strategy
 
-import org.automl.model.context.ContextHolder
+import org.automl.model.context.ParamHandler
 import org.automl.model.operators.data.bagging.BaggingBase
 import org.automl.model.operators.data.balance.BalanceBase
 import org.automl.model.operators.data.evaluation.EvaluationBase
@@ -33,8 +33,8 @@ class ProbeAgent extends Runnable {
         while (!stopFlag) {
           run(task)
           scheduler.onlineLearn(task.getParams :+ task.calcFinalValidation)
-          ContextHolder.feedback(task)
-          task = scheduler.getNextProbeTask(task, ContextHolder.getParams)
+          ParamHandler.feedback(task)
+          task = scheduler.getNextProbeTask(task, ParamHandler.getParams)
         }
     catch {
       case e: Exception =>

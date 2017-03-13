@@ -2,7 +2,7 @@ package org.automl.model
 
 import java.util.concurrent.{Executors, TimeUnit}
 
-import org.automl.model.context.{ContextHolder, TaskBuilder}
+import org.automl.model.context.{ContextHolder, ParamHandler, TaskBuilder}
 import org.automl.model.output.OutputHandler
 
 /**
@@ -19,7 +19,7 @@ object MasterConsole {
     val operators = TaskBuilder.loadOperators(args)
     TaskBuilder.initAssemblyValidation(operators)
     TaskBuilder.initIdealValidation(operators)
-    ContextHolder.initBestOperatorSequences(beamSearchNum)
+    ParamHandler.initBestOperatorSequences(beamSearchNum)
     val tasks = TaskBuilder.buildProbeTask(operators, data, beamSearchNum)
     val agents = TaskBuilder.buildProbeAgent(beamSearchNum)
     val scheduler = TaskBuilder.getScheduler
@@ -37,11 +37,11 @@ object MasterConsole {
     while (currentRunTimes <= TaskBuilder.minIterations || (currentRunTimes <= TaskBuilder.maxIterations && !ContextHolder.hasConverged)) {
       //一般情况下，至少保证每个搜索任务（共beamSearchNum个）都探测一遍后，才开始进行学习与反馈调整
       if (currentRunTimes >= beamSearchNum) {
-        scheduler.learn(ContextHolder.toDF(ContextHolder.getParams))
+        scheduler.learn(ContextHolder.toDF(ParamHandler.getParams))
         ContextHolder.adjustMaxEstimateAcceptRatio()
       }
       Thread.sleep(TaskBuilder.learnInterval)
-      currentRunTimes = ContextHolder.getRunTimes
+      currentRunTimes = ParamHandler.getRunTimes
     }
 
     //探索任务结束
@@ -50,6 +50,6 @@ object MasterConsole {
     exeService.awaitTermination(beamSearchNum * TaskBuilder.learnInterval, TimeUnit.MILLISECONDS)
 
     OutputHandler.outputConvergenceRecord(ContextHolder.getConvergeRecords, TaskBuilder.getConvergenceRecordOutputPath)
-    OutputHandler.outputBestSearchResults(ContextHolder.getBestOperatorSequences, TaskBuilder.getBestResultsOutputPath)
+    OutputHandler.outputBestSearchResults(ParamHandler.getBestOperatorSequences, TaskBuilder.getBestResultsOutputPath)
   }
 }
