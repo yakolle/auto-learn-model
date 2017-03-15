@@ -46,6 +46,7 @@ class AdaptableScheduler extends ProbeSchedulerBase {
   }
 
   override def setLearner(learner: LearnerBase) {
+    this.learner = learner
     schedulerArray.foreach(_.setLearner(learner))
   }
 

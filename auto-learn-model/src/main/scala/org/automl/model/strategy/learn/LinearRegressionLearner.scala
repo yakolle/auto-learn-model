@@ -54,6 +54,7 @@ class LinearRegressionLearner extends LearnerBase {
     this.synchronized {
       val stepUnit = if (null == coefficients) {
         coefficients = Array.fill(x.length)(0.0)
+        normalizedCoefficients = Array.fill(x.length)(0.0)
         -param.last
       } else onlineLearningRate * (predict(x) - param.last)
 
