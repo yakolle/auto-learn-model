@@ -43,6 +43,16 @@ class ProbeTask(private val operatorChain: Array[BaseOperator], var data: DataFr
   }
 
   /**
+    * 获取当前任务的超参数的参数类型数组
+    *
+    * @return 当前任务的超参数的参数类型数组
+    */
+  def getParamTypes = operatorChain.flatMap {
+    operator =>
+      for (i <- 0 until operator.getParamNum) yield operator.getParamType(i)
+  }
+
+  /**
     * 更新当前任务所有任务的超参数
     *
     * @param params 要更新的超参数数组

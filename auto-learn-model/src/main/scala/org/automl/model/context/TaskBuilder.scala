@@ -156,7 +156,7 @@ object TaskBuilder {
       new ProbeTask(newOperators, data)
     }
     //保存每个超参数的边界
-    ParamHandler.setParamBoundaries(paramBoundaries.toArray)
+    ParamHoldler.setParamBoundaries(paramBoundaries.toArray)
     tasks.toArray
   }
 
@@ -180,8 +180,7 @@ object TaskBuilder {
     */
   def getScheduler: ProbeSchedulerBase = {
     val scheduler = new AdaptableScheduler
-    scheduler.learner = getLearner
-    scheduler.schedulerArray.foreach(_.learner = scheduler.learner)
+    scheduler.setLearner(getLearner)
     ContextHolder.setScheduler(scheduler)
     scheduler
   }

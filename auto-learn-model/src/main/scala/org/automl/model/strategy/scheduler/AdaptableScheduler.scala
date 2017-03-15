@@ -2,8 +2,9 @@ package org.automl.model.strategy.scheduler
 
 import java.util.concurrent.ConcurrentHashMap
 
-import org.automl.model.context.ParamHandler
+import org.automl.model.context.ParamHoldler
 import org.automl.model.strategy.ProbeTask
+import org.automl.model.strategy.learn.LearnerBase
 import org.automl.model.utils.SampleUtil
 
 import scala.util.Random
@@ -21,7 +22,7 @@ class AdaptableScheduler extends ProbeSchedulerBase {
 
   //策略集合
   val schedulerArray = Array[ProbeSchedulerBase](new CrossoverScheduler, new MutationScheduler, new RegressionScheduler,
-    new BoundaryExpandScheduler)
+    new BoundaryExpandScheduler, new DesertPlowScheduler)
   //各策略初始权重
   private val schedulerWeights = Array.fill(schedulerArray.length)(1.0)
   //参数与策略的cache，用于对每类策略的实际收益进行跟踪
@@ -42,6 +43,10 @@ class AdaptableScheduler extends ProbeSchedulerBase {
     */
   override def amplifyFluctuation() {
     schedulerArray.foreach(_.amplifyFluctuation())
+  }
+
+  override def setLearner(learner: LearnerBase) {
+    schedulerArray.foreach(_.setLearner(learner))
   }
 
   /**
@@ -73,19 +78,17 @@ class AdaptableScheduler extends ProbeSchedulerBase {
     * 获取下次要probe的超参数列表，子类需要重写该方法
     *
     * @param currentTask 当前probe任务
-    * @param paramMatrix 超参数数据
     * @return 下次要probe的超参数列表
     */
-  override def getNextParams(currentTask: ProbeTask, paramMatrix: Array[Array[Double]]): Array[Double] = null
+  override def getNextParams(currentTask: ProbeTask): Array[Double] = null
 
   /**
     * 获取下次要probe的任务，主要是获取新的要probe的超参数，该方法为框架性方法，是提供给外部获取任务的接口，子类无需重写该方法
     *
     * @param currentTask 当前probe任务
-    * @param paramMatrix 超参数数据
     * @return 下次要probe的任务
     */
-  override def getNextProbeTask(currentTask: ProbeTask, paramMatrix: Array[Array[Double]]): ProbeTask = {
+  override def getNextProbeTask(currentTask: ProbeTask): ProbeTask = {
     //任务运行点置0
     currentTask.runPoint = 0
 
@@ -111,15 +114,15 @@ class AdaptableScheduler extends ProbeSchedulerBase {
           val weight = SampleUtil.getNextGaussian(schedulerWeightRandomGenerator, wIt - minWeight, maxWeightFluctuationRatio)
           if (weight < 0.0) 0.0 else weight
       }
-      schedulerIndex = SampleUtil.rouletteLikeSelect(weights)
+      schedulerIndex = SampleUtil.rouletteLikeSelect(schedulerWeightRandomGenerator, weights)
       val scheduler = schedulerArray(schedulerIndex)
 
-      nextParams = scheduler.getNextParams(currentTask, paramMatrix)
+      nextParams = scheduler.getNextParams(currentTask)
       if (null == nextParams) {
         //如果参数返回为空，说明该策略已失效，就禁用掉该策略
         schedulerWeights(schedulerIndex) = 0.0
         nextEstimate = 0.0
-      } else if (!ParamHandler.isUniqueParam(currentParams, nextParams)) {
+      } else if (!ParamHoldler.isUniqueParam(currentParams, nextParams)) {
         //判断新参数和历史参数是否相似，如果太相似，就重新获取新参数，同时增大系统扰动
         amplifyFluctuation()
         nextEstimate = 0.0

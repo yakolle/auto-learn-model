@@ -75,7 +75,7 @@ object ContextHolder {
   def adjustMaxEstimateAcceptRatio() {
     var errSum = 0.0
     var validationSum = 0.0
-    ParamHandler.getBestOperatorSequences.foreach {
+    ParamHoldler.getBestOperatorSequences.foreach {
       case (operatorChain, validation) =>
         if (null != operatorChain) {
           val paramArray = operatorChain.flatMap(operator => for (i <- 0 until operator.getParamNum) yield operator.getCurrentParam(i))
@@ -94,13 +94,13 @@ object ContextHolder {
     */
   private def getParamWeights = {
     //获取当前学习器对各个超参数的重要性评估
-    val weights = learner.getParamImportances.map(math.abs)
+    val weights = learner.getParamImportances
     //计算最终验证值的权重，按照TaskBuilder.validationWeight作为验证值同超参数集合的比重
     val weightNorm = MathUtil.calcNorm(weights)
 
     //验证值的权重比例随着运行时间的增加逐渐增加，以防止非凸且极大值都差不多的情景下，参数变化剧烈导致无法收敛的问题
     val validationWeight = TaskBuilder.initValidationWeight +
-      (TaskBuilder.maxValidationWeight - TaskBuilder.initValidationWeight) / (1.0 + math.exp(-ParamHandler.getRunTimes / 64.0 + 3.7))
+      (TaskBuilder.maxValidationWeight - TaskBuilder.initValidationWeight) / (1.0 + math.exp(-ParamHoldler.getRunTimes / 64.0 + 3.7))
 
     //x^2=a,t^2=1-a，其中a=TaskBuilder.validationWeight，x=validationWeight，t为原超参数变换后的norm
     if (0 == weightNorm) Array.fill(weights.length)(math.sqrt((1 - validationWeight) / weights.length))
@@ -116,8 +116,8 @@ object ContextHolder {
     * @return 归一化后的最好超参数集合，包括验证值
     */
   private def getBestParams = {
-    val paramBoundaries = ParamHandler.getParamBoundaries
-    ParamHandler.getBestParams.map {
+    val paramBoundaries = ParamHoldler.getParamBoundaries
+    ParamHoldler.getBestParams.map {
       params =>
         (for (i <- paramBoundaries.indices) yield {
           val bottom = paramBoundaries(i)._1
@@ -134,7 +134,7 @@ object ContextHolder {
     */
   def hasConverged: Boolean = {
     var converged = false
-    val curRunTimes = ParamHandler.getRunTimes
+    val curRunTimes = ParamHoldler.getRunTimes
 
     if (convergeRecBuffer.nonEmpty && curRunTimes <= convergeRecBuffer.head._1) Thread.sleep(TaskBuilder.learnInterval)
     else {
@@ -149,7 +149,7 @@ object ContextHolder {
       convergeRecBuffer += ((curRunTimes, clusterMeanDist, scheduler.getMaxEstimateAcceptRatio, bestParams))
       if (convergeRecBuffer.length >= TaskBuilder.convergeRecBufferSize) {
         OutputHandler.outputConvergenceRecord(convergeRecBuffer, TaskBuilder.getConvergenceRecordOutputPath)
-        OutputHandler.outputBestSearchResults(ParamHandler.getBestOperatorSequences, TaskBuilder.getBestResultsOutputPath)
+        OutputHandler.outputBestSearchResults(ParamHoldler.getBestOperatorSequences, TaskBuilder.getBestResultsOutputPath)
 
         convergeRecBuffer.clear()
       }

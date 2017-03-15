@@ -13,8 +13,9 @@ import scala.util.Random
 abstract class ProbeSchedulerBase {
   protected val randomGenerator = Random
   protected val propagationRandomGenerator = Random
+  protected val paramChooseRandomGenerator = Random
 
-  var learner: LearnerBase = _
+  protected var learner: LearnerBase = _
 
   //对已经探测过的线进行轮盘选择时，上下浮动的最大比率，当然是按照每条线的实际验证值进行轮盘选择
   var maxPeerFluctuationRatio = 0.1
@@ -27,6 +28,10 @@ abstract class ProbeSchedulerBase {
   def setMaxEstimateAcceptRatio(maxEstimateAcceptRatio: Double) = this.maxEstimateAcceptRatio = maxEstimateAcceptRatio
 
   def getMaxEstimateAcceptRatio = maxEstimateAcceptRatio
+
+  def setLearner(learner: LearnerBase) {
+    this.learner = learner
+  }
 
   /**
     * 增大系统扰动
@@ -64,26 +69,24 @@ abstract class ProbeSchedulerBase {
     minValidation -= 1E-6 * minValidation
     val peerWeights = paramMatrix.map(params => SampleUtil.getNextNonNegativeTrimmedGaussian(propagationRandomGenerator,
       params.last - minValidation, maxPeerFluctuationRatio / 3))
-    SampleUtil.rouletteLikeSelect(peerWeights)
+    SampleUtil.rouletteLikeSelect(propagationRandomGenerator, peerWeights)
   }
 
   /**
     * 获取下次要probe的超参数列表，子类需要重写该方法
     *
     * @param currentTask 当前probe任务
-    * @param paramMatrix 超参数数据
     * @return 下次要probe的超参数列表
     */
-  def getNextParams(currentTask: ProbeTask, paramMatrix: Array[Array[Double]]): Array[Double]
+  def getNextParams(currentTask: ProbeTask): Array[Double]
 
   /**
     * 获取下次要probe的任务，主要是获取新的要probe的超参数，该方法为框架性方法，是提供给外部获取任务的接口，子类无需重写该方法
     *
     * @param currentTask 当前probe任务
-    * @param paramMatrix 超参数数据
     * @return 下次要probe的任务
     */
-  def getNextProbeTask(currentTask: ProbeTask, paramMatrix: Array[Array[Double]]): ProbeTask = {
+  def getNextProbeTask(currentTask: ProbeTask): ProbeTask = {
     //任务运行点置0
     currentTask.runPoint = 0
 
@@ -95,7 +98,7 @@ abstract class ProbeSchedulerBase {
     var maxEstimateAcceptRatioNice = maxEstimateAcceptRatio
     var sinkingTimes = 0
     do {
-      nextParams = getNextParams(currentTask, paramMatrix)
+      nextParams = getNextParams(currentTask)
       nextEstimate = learner.predict(nextParams)
       /*
       如果评估值大于当前任务的验证值，或者虽然小于但仍然在容许的限度范围内，就认为新生成的参数集合是可探测的,

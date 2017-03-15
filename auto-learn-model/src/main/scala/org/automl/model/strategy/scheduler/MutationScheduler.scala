@@ -40,14 +40,13 @@ class MutationScheduler extends ProbeSchedulerBase {
     * 获取下次要probe的超参数列表，子类需要重写该方法
     *
     * @param currentTask 当前probe任务
-    * @param paramMatrix 超参数数据
     * @return 下次要probe的超参数列表
     */
-  override def getNextParams(currentTask: ProbeTask, paramMatrix: Array[Array[Double]]): Array[Double] = {
+  override def getNextParams(currentTask: ProbeTask): Array[Double] = {
     //用学习器的各参数重要程度，对变异点进行抽样
     val weights = learner.getParamImportances.map(wIt => SampleUtil.getNextNonNegativeTrimmedGaussian(mutationPointRandomGenerator,
-      math.abs(wIt), maxMutationPointFluctuationRatio / 3))
-    val mutationPoint = SampleUtil.rouletteLikeSelect(weights)
+      wIt, maxMutationPointFluctuationRatio / 3))
+    val mutationPoint = SampleUtil.rouletteLikeSelect(paramChooseRandomGenerator, weights)
     //根据参数序列中的变异点找到该参数所属算子的算子索引
     currentTask.runPoint = currentTask.getRunPoint(mutationPoint)
     val operator = currentTask.getOperatorChain.apply(currentTask.runPoint)

@@ -23,13 +23,30 @@ object SampleUtil {
   /**
     * 轮盘赌选择法，实际上就是按照指定概率分布进行抽样
     *
-    * @param pArray 各轮盘大小
+    * @param randomGenerator 随机数产生器
+    * @param pArray          各轮盘大小
     * @return 被选中的轮盘编号
     */
-  def rouletteLikeSelect(pArray: Array[Double]): Int = {
+  def rouletteLikeSelect(randomGenerator: Random, pArray: Array[Double]): Int = rouletteLikeSelect(randomGenerator, pArray, 1).head
+
+  /**
+    * 轮盘赌选择法，实际上就是按照指定概率分布进行抽样
+    *
+    * @param randomGenerator 随机数产生器
+    * @param pArray          各轮盘大小
+    * @param num             要抽样的个数
+    * @return 被选中的轮盘编号数组
+    */
+  def rouletteLikeSelect(randomGenerator: Random, pArray: Array[Double], num: Int): Array[Int] = {
+    val indices = new Array[Int](num)
     val cdfArray = cdf(pArray)
-    val acceptRatio = Random.nextDouble * cdfArray.last
-    cdfArray.indexWhere(_ >= acceptRatio)
+
+    for (i <- 0 until num) {
+      val acceptRatio = randomGenerator.nextDouble * cdfArray.last
+      indices(i) = cdfArray.indexWhere(_ >= acceptRatio)
+    }
+
+    indices
   }
 
   /**

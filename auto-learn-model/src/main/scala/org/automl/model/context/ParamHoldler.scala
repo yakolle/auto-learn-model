@@ -9,7 +9,7 @@ import scala.collection.mutable.ArrayBuffer
 /**
   * Created by zhangyikuo on 2017/3/13.
   */
-object ParamHandler {
+object ParamHoldler {
   //超参数matrix，目前为止搜索的所有的超参数集合，最后一列是实际验证值
   private val params: ArrayBuffer[Array[Double]] = new ArrayBuffer[Array[Double]]
   //超参数matrix各行到原点的距离

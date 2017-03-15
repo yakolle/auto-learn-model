@@ -1,5 +1,6 @@
 package org.automl.model.strategy.scheduler
 
+import org.automl.model.context.ParamHoldler
 import org.automl.model.operators.BaseOperator
 import org.automl.model.strategy.ProbeTask
 
@@ -35,11 +36,11 @@ class RegressionScheduler extends ProbeSchedulerBase {
     * 获取下次要probe的超参数列表，子类需要重写该方法
     *
     * @param currentTask 当前probe任务
-    * @param paramMatrix 超参数数据
     * @return 下次要probe的超参数列表
     */
-  override def getNextParams(currentTask: ProbeTask, paramMatrix: Array[Array[Double]]): Array[Double] = {
+  override def getNextParams(currentTask: ProbeTask): Array[Double] = {
     //轮盘选择要进行繁衍的某条线
+    val paramMatrix = ParamHoldler.getBestParams
     val chosenRow = paramMatrix(choosePropagationLine(paramMatrix))
     val chosenRowValue: Double = chosenRow.last
 

@@ -73,9 +73,9 @@ class LinearRegressionLearner extends LearnerBase {
   /**
     * 获取各超参数重要程度评估，而超参数的权重有可能表示重要程度，但也有可能只是系数而已，取决于使用哪种学习器
     *
-    * @return 各超参数重要程度评估
+    * @return 各超参数重要程度评估，各子类要保证重要程度都是非负的
     */
-  override def getParamImportances: Array[Double] = normalizedCoefficients
+  override def getParamImportances: Array[Double] = normalizedCoefficients.map(math.abs)
 
   /**
     * 获取各超参数的权重
