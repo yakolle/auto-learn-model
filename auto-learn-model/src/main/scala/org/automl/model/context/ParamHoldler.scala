@@ -2,7 +2,7 @@ package org.automl.model.context
 
 import org.automl.model.operators.BaseOperator
 import org.automl.model.strategy.ProbeTask
-import org.automl.model.utils.{MathUtil, SimilarityUtil}
+import org.automl.model.utils.{MathUtil, SimilarityUtil, SparsityUtil}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -143,5 +143,15 @@ object ParamHoldler {
     */
   def getCurrentParamMinMax(paramIndex: Int): (Double, Double) = {
     (params.minBy(_ (paramIndex)).apply(paramIndex), params.maxBy(_ (paramIndex)).apply(paramIndex))
+  }
+
+  /**
+    * 获取距离最远的两个参数
+    *
+    * @return 距离最远的两个参数
+    */
+  def getFarthestParams = {
+    val (_, paramIndex1, paramIndex2) = SparsityUtil.findMaxGap(paramDistances.toArray, minParamDistance, maxParamDistance)
+    (params(paramIndex1), params(paramIndex2))
   }
 }

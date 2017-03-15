@@ -22,7 +22,7 @@ class AdaptableScheduler extends ProbeSchedulerBase {
 
   //策略集合
   val schedulerArray = Array[ProbeSchedulerBase](new CrossoverScheduler, new MutationScheduler, new RegressionScheduler,
-    new BoundaryExpandScheduler, new DesertPlowScheduler)
+    new BoundaryExpandScheduler, new DesertPlowScheduler, new RegressionIgniteScheduler, new MutationIgniteScheduler)
   //各策略初始权重
   private val schedulerWeights = Array.fill(schedulerArray.length)(1.0)
   //参数与策略的cache，用于对每类策略的实际收益进行跟踪

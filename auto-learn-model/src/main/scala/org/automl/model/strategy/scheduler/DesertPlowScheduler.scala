@@ -3,7 +3,7 @@ package org.automl.model.strategy.scheduler
 import org.automl.model.context.ParamHoldler
 import org.automl.model.operators.BaseOperator
 import org.automl.model.strategy.ProbeTask
-import org.automl.model.utils.SampleUtil
+import org.automl.model.utils.{SampleUtil, SparsityUtil}
 
 import scala.collection.mutable
 
@@ -12,60 +12,6 @@ import scala.collection.mutable
   */
 class DesertPlowScheduler extends ProbeSchedulerBase {
   private val disableExpandParamIndices = mutable.Set.empty[Int]
-
-  /**
-    * 找到间隔最大的两个参数的平均值
-    *
-    * @param plowParam   参数列表
-    * @param curMinParam 参数最小值
-    * @param curMaxParam 参数最大值
-    * @return 返回值格式为:(是否均衡,间隔最大的两个参数的平均值)
-    */
-  private def findMaxGap(plowParam: Array[Double], curMinParam: Double, curMaxParam: Double) = {
-    //构建plowParam.length个桶，将plowParam装入相应桶中
-    val buckets: Array[(Double, Double)] = Array.fill(plowParam.length)(null)
-    plowParam.foreach {
-      paramEle =>
-        val sectionIndex = math.min(((paramEle - curMinParam) * plowParam.length / (curMaxParam - curMinParam)).toInt, plowParam.length - 1)
-        val sectionTuple = buckets(sectionIndex)
-        buckets(sectionIndex) = if (null == sectionTuple) (paramEle, paramEle)
-        else if (paramEle > sectionTuple._2) (sectionTuple._1, paramEle)
-        else if (paramEle < sectionTuple._1) (paramEle, sectionTuple._2)
-        else sectionTuple
-    }
-
-    //找到连续空桶数最多的section
-    var maxEmptyBucketNum = 0
-    var paramStart = 0
-    var paramEnd = 0
-    var curEmptyBucketNum = 0
-    var curEmptyBucketStart = 0
-    for (i <- buckets.indices) {
-      if (null == buckets(i)) curEmptyBucketNum += 1
-      else {
-        if (curEmptyBucketNum >= maxEmptyBucketNum) {
-          maxEmptyBucketNum = curEmptyBucketNum
-          paramStart = curEmptyBucketStart
-          paramEnd = i
-        }
-        curEmptyBucketNum = 0
-        curEmptyBucketStart = i
-      }
-    }
-
-    //如果没有空桶，实际上buckets已是排好序的plowParam了
-    if (paramEnd - paramStart <= 1) {
-      var maxSpan = Double.MinValue
-      for (i <- 1 until buckets.length) {
-        val curSpan = buckets(i)._1 - buckets(i - 1)._1
-        if (curSpan > maxSpan) {
-          paramEnd = i
-          maxSpan = curSpan
-        }
-      }
-      (true, buckets(paramEnd)._1 - maxSpan / 2.0)
-    } else (false, (buckets(paramEnd)._1 - buckets(paramStart)._2) / 2.0)
-  }
 
   /**
     * 获取下次要probe的超参数列表，子类需要重写该方法
@@ -91,7 +37,8 @@ class DesertPlowScheduler extends ProbeSchedulerBase {
       //找到plowPoint对应参数列间隔最大的两点
       val plowParam = ParamHoldler.getParams.map(_ (plowPoint))
       val (curMinParam, curMaxParam) = (plowParam.min, plowParam.max)
-      var (isBalanced, param) = findMaxGap(plowParam, curMinParam, curMaxParam)
+      val (isBalanced, paramIndex1, paramIndex2) = SparsityUtil.findMaxGap(plowParam, curMinParam, curMaxParam)
+      var param = (plowParam(paramIndex1) + plowParam(paramIndex2)) / 2.0
 
       if (BaseOperator.PARAM_TYPE_INT == operator.getParamType(offset) || BaseOperator.PARAM_TYPE_BOOLEAN == operator.getParamType(offset))
         param = math.round(param)
