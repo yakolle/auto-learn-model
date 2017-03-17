@@ -8,7 +8,7 @@ import org.automl.model.operators.data.sift.LassoSelector
 import org.automl.model.operators.data.transform.MinMaxMapper
 import org.automl.model.operators.model.train.LogisticRegressionTrain
 import org.automl.model.operators.model.validation.{AUCValidation, AssemblyValidation, ValidationBase}
-import org.automl.model.strategy.learn.{LearnerBase, LinearRegressionLearner}
+import org.automl.model.strategy.learn.{AdaptableLearner, LearnerBase}
 import org.automl.model.strategy.scheduler.{AdaptableScheduler, ProbeSchedulerBase}
 import org.automl.model.strategy.{ProbeAgent, ProbeTask}
 
@@ -29,21 +29,12 @@ object TaskBuilder {
   //最好结果缓存大小
   var bestResultNum = 10
 
-  //参数集合对应的验证值在欧式空间中的权重比例（参数集合和该参数集合对应的验证值构成整个参数的欧式空间），初始值
-  var initValidationWeight = 0.5
-  //验证值在欧式空间中的权重比例，最大值
-  var maxValidationWeight = 0.95
-
-  //是否收敛的评估阈值
-  var convergedThreshold = 1E-2
-  //收敛判断时稳定时的容忍阈值
-  var convergedTolerance = 1E-6
   //收敛记录buffer的大小
   val convergeRecBufferSize = 10
+  //收敛判断时稳定时验证值的容忍阈值
+  var validationTolerance = 1E-3
   //收敛判断时最大稳定次数
   var maxSteadyTimes = 20
-  //系统搜索稳定判断，其稳定次数（稳定衡量指标）采用线性增加几何下降策略，几何下降的比率
-  var steadyTimeDiveRatio = 0.7
 
   //超参数相似度阈值，如果小于该阈值，就认为两个超参数是一样的
   var paramSimilarityZeroDomain = 1E-6
@@ -92,22 +83,6 @@ object TaskBuilder {
     * @return 并可行搜索的任务数量
     */
   def getBeamSearchNum(sparkSession: SparkSession) = 4
-
-  /**
-    * 初始化理想的验证值
-    *
-    * @param operators 算子列表，据此列表计算理想验证值
-    */
-  def initIdealValidation(operators: Array[BaseOperator]) {
-    val idealValidations = Array((1.0, 1.0))
-    val idealValidation = AssemblyValidation.assembleValidation(idealValidations)
-
-    val idealTrainValidations = Array((1.0, 1.0))
-    val idealTrainValidation = AssemblyValidation.assembleTrainValidation(idealTrainValidations)
-
-    val validation = AssemblyValidation.assembleTrainingAndTrainedValidation(idealTrainValidation, idealValidation)
-    ContextHolder.setIdealValidation(validation)
-  }
 
   /**
     * 初始化AssemblyValidation，主要是加载各验证项相关权重
@@ -168,7 +143,7 @@ object TaskBuilder {
     * @return 新的参数学习评估器
     */
   def getLearner: LearnerBase = {
-    val learner = new LinearRegressionLearner
+    val learner = new AdaptableLearner
     ContextHolder.setLearner(learner)
     learner
   }

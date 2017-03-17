@@ -9,7 +9,6 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.automl.model.output.OutputHandler
 import org.automl.model.strategy.learn.LearnerBase
 import org.automl.model.strategy.scheduler.ProbeSchedulerBase
-import org.automl.model.utils.{MathUtil, SimilarityUtil}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -21,23 +20,14 @@ object ContextHolder {
   private var learner: LearnerBase = _
   private var scheduler: ProbeSchedulerBase = _
 
-  //最理想情况下的验证值
-  private var idealValidation: Double = 0.0
+  private var lastMaxValidation = 0.0
+  private var steadyTimes = 0
 
-  private var lastSteadyTimes = 0
-  private var lastSteadyClusterMeanDist = Double.MaxValue
-  private var currentSteadyTimes = 0
-  private var lastClusterMeanDist = Double.MaxValue
-
-  //收敛记录，格式为(runTimes, clusterMeanDist, maxEstimateAcceptRatio, bestParams)
-  private val convergeRecBuffer: ArrayBuffer[(Int, Double, Double, Array[Array[Double]])] = new ArrayBuffer[(Int, Double, Double,
+  //收敛记录，格式为(runTimes, steadyTimes, maxEstimateAcceptRatio, bestParams)
+  private val convergeRecBuffer: ArrayBuffer[(Int, Int, Double, Array[Array[Double]])] = new ArrayBuffer[(Int, Int, Double,
     Array[Array[Double]])](TaskBuilder.convergeRecBufferSize)
 
   def getConvergeRecords = convergeRecBuffer
-
-  def setIdealValidation(idealValidation: Double) {
-    this.idealValidation = idealValidation
-  }
 
   def setSparkSession(sparkSession: SparkSession) {
     if (null == this.sparkSession) this.sparkSession = sparkSession
@@ -88,46 +78,6 @@ object ContextHolder {
   }
 
   /**
-    * 获取各超参数的权重，包括验证值
-    *
-    * @return 各超参数的权重，包括验证值
-    */
-  private def getParamWeights = {
-    //获取当前学习器对各个超参数的重要性评估
-    val weights = learner.getParamImportances
-    //计算最终验证值的权重，按照TaskBuilder.validationWeight作为验证值同超参数集合的比重
-    val weightNorm = MathUtil.calcNorm(weights)
-
-    //验证值的权重比例随着运行时间的增加逐渐增加，以防止非凸且极大值都差不多的情景下，参数变化剧烈导致无法收敛的问题
-    val validationWeight = TaskBuilder.initValidationWeight +
-      (TaskBuilder.maxValidationWeight - TaskBuilder.initValidationWeight) / (1.0 + math.exp(-ParamHoldler.getRunTimes / 64.0 + 3.7))
-
-    //x^2=a,t^2=1-a，其中a=TaskBuilder.validationWeight，x=validationWeight，t为原超参数变换后的norm
-    if (0 == weightNorm) Array.fill(weights.length)(math.sqrt((1 - validationWeight) / weights.length))
-    else {
-      val weightFactor = math.sqrt(1 - validationWeight) / weightNorm
-      weights.map(_ * weightFactor) :+ math.sqrt(validationWeight)
-    }
-  }
-
-  /**
-    * 获取当前搜索到的最好超参数集合，包括验证值
-    *
-    * @return 归一化后的最好超参数集合，包括验证值
-    */
-  private def getBestParams = {
-    val paramBoundaries = ParamHoldler.getParamBoundaries
-    ParamHoldler.getBestParams.map {
-      params =>
-        (for (i <- paramBoundaries.indices) yield {
-          val bottom = paramBoundaries(i)._1
-          val upper = paramBoundaries(i)._2
-          (params(i) - bottom) / (upper - bottom)
-        }).toArray[Double] :+ (params.last / this.idealValidation)
-    }
-  }
-
-  /**
     * 判断是否收敛，根据当前搜索到的最好的搜索任务集合的状态进行判断
     *
     * @return 是否收敛
@@ -136,17 +86,12 @@ object ContextHolder {
     var converged = false
     val curRunTimes = ParamHoldler.getRunTimes
 
-    if (convergeRecBuffer.nonEmpty && curRunTimes <= convergeRecBuffer.head._1) Thread.sleep(TaskBuilder.learnInterval)
+    if (convergeRecBuffer.nonEmpty && curRunTimes <= convergeRecBuffer.last._1) Thread.sleep(TaskBuilder.learnInterval)
     else {
-      val weights = getParamWeights
-      val bestParams = getBestParams
+      val curMaxValidation = ParamHoldler.getBestOperatorSequences.maxBy(_._2)._2
+      steadyTimes = if (curMaxValidation - lastMaxValidation <= TaskBuilder.validationTolerance) steadyTimes + 1 else 0
 
-      //计算这些超参数数据（将这些超参数看成点）的中心
-      val bestParamsCenter = MathUtil.calcMean(bestParams)
-      //计算各条线到中心的平均距离，并且按照当前学习器学习到的各超参数的评估权重进行加权
-      val clusterMeanDist = bestParams.map(SimilarityUtil.calcWeightedEuclideanDistance(_, bestParamsCenter, weights)).sum / bestParams.length
-
-      convergeRecBuffer += ((curRunTimes, clusterMeanDist, scheduler.getMaxEstimateAcceptRatio, bestParams))
+      convergeRecBuffer += ((curRunTimes, steadyTimes, scheduler.getMaxEstimateAcceptRatio, ParamHoldler.getBestParams))
       if (convergeRecBuffer.length >= TaskBuilder.convergeRecBufferSize) {
         OutputHandler.outputConvergenceRecord(convergeRecBuffer, TaskBuilder.getConvergenceRecordOutputPath)
         OutputHandler.outputBestSearchResults(ParamHoldler.getBestOperatorSequences, TaskBuilder.getBestResultsOutputPath)
@@ -154,28 +99,8 @@ object ContextHolder {
         convergeRecBuffer.clear()
       }
 
-      //如果各条线到中心的平均距离小于某个阈值，并且稳定（变化不大）次数达到一定阈值，就认为是收敛了
-      if (clusterMeanDist <= TaskBuilder.convergedThreshold) {
-        val lastSteadyDistDiff = math.abs(clusterMeanDist - lastSteadyClusterMeanDist)
-        if (lastSteadyDistDiff <= TaskBuilder.convergedTolerance) {
-          lastSteadyTimes += 1
-          lastSteadyClusterMeanDist = clusterMeanDist
-        } else lastSteadyTimes = (lastSteadyTimes * TaskBuilder.steadyTimeDiveRatio).toInt
-        if (0 == lastSteadyTimes) lastSteadyClusterMeanDist = clusterMeanDist
-
-        val curDistDiff = math.abs(clusterMeanDist - lastClusterMeanDist)
-        if (curDistDiff <= TaskBuilder.convergedTolerance) currentSteadyTimes += 1
-        else {
-          if (currentSteadyTimes >= lastSteadyTimes) {
-            lastSteadyClusterMeanDist = lastClusterMeanDist
-            lastSteadyTimes = currentSteadyTimes
-          }
-          currentSteadyTimes = 0
-        }
-
-        converged = math.max(lastSteadyTimes, currentSteadyTimes) > TaskBuilder.maxSteadyTimes
-      }
-      lastClusterMeanDist = clusterMeanDist
+      lastMaxValidation = curMaxValidation
+      converged = steadyTimes > TaskBuilder.maxSteadyTimes
     }
 
     converged

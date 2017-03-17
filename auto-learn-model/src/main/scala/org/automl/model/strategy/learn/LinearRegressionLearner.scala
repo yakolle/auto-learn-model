@@ -1,7 +1,7 @@
 package org.automl.model.strategy.learn
 
 import org.apache.spark.ml.feature.MinMaxScaler
-import org.apache.spark.ml.regression.LinearRegression
+import org.apache.spark.ml.regression.{LinearRegression, LinearRegressionModel}
 import org.apache.spark.sql.DataFrame
 import org.automl.model.utils.MathUtil
 
@@ -15,6 +15,7 @@ class LinearRegressionLearner extends LearnerBase {
   private val lambda = 0.1
   private val elasticNetParam = 0.5
 
+  private var model: LinearRegressionModel = _
   //系数向量
   private var coefficients: Array[Double] = _
   //截距项
@@ -36,6 +37,7 @@ class LinearRegressionLearner extends LearnerBase {
       .setFeaturesCol("transformedFeatures").fit(nzParams)
 
     this.synchronized {
+      this.model = model
       coefficients = model.coefficients.toArray
       intercept = model.intercept
 
@@ -72,11 +74,23 @@ class LinearRegressionLearner extends LearnerBase {
   override def predict(param: Array[Double]): Double = MathUtil.dot(coefficients, param) + intercept
 
   /**
+    * 预测超参数集合的得分
+    *
+    * @param params 要评估的超参数集合
+    * @return 超参数集合的预测得分，得分列名为"prediction"
+    */
+  override def predict(params: DataFrame): DataFrame = this.synchronized(model.transform(params))
+
+  /**
     * 获取各超参数重要程度评估，而超参数的权重有可能表示重要程度，但也有可能只是系数而已，取决于使用哪种学习器
     *
-    * @return 各超参数重要程度评估，各子类要保证重要程度都是非负的
+    * @return 各超参数重要程度评估，各子类要保证重要程度都是非负的，并且是归一化的
     */
-  override def getParamImportances: Array[Double] = normalizedCoefficients.map(math.abs)
+  override def getParamImportances: Array[Double] = {
+    val importances = normalizedCoefficients.map(math.abs)
+    val sum = importances.sum
+    if (sum <= 0.0) importances else importances.map(_ / sum)
+  }
 
   /**
     * 获取各超参数的权重
@@ -84,13 +98,6 @@ class LinearRegressionLearner extends LearnerBase {
     * @return 各超参数的权重
     */
   override def getWeights: Array[Double] = coefficients
-
-  /**
-    * 获取各超参数的权重，以及一些必要参数，比如线性回归的截距项
-    *
-    * @return 各超参数的权重，及一些必要参数
-    */
-  override def getAllWeights: Array[Double] = intercept +: coefficients
 
   /**
     * clone方法

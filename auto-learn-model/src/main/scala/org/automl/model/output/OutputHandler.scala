@@ -24,7 +24,7 @@ object OutputHandler {
     * @param convergeRecBuffer 收敛记录，参见ContextHolder.convergeRecBuffer
     * @param outputFilePath    收敛记录文件路径
     */
-  def outputConvergenceRecord(convergeRecBuffer: ArrayBuffer[(Int, Double, Double, Array[Array[Double]])], outputFilePath: String) {
+  def outputConvergenceRecord(convergeRecBuffer: ArrayBuffer[(Int, Int, Double, Array[Array[Double]])], outputFilePath: String) {
     val lines = new java.util.ArrayList[String]
     val strBuffer = StringBuilder.newBuilder
     for (learnRec <- convergeRecBuffer) {

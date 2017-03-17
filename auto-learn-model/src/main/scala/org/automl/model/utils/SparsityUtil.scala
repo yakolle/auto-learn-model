@@ -47,8 +47,9 @@ object SparsityUtil {
         }
       }
 
-      //如果没有空桶，实际上buckets已是排好序的plowParam了
-      if (end - start <= 1) {
+      if (end - start < 1) (true, 0, 0)
+      else if (1 == end - start) {
+        //如果没有空桶，实际上buckets已是排好序的plowParam了
         var maxSpan = Double.MinValue
         for (i <- 1 until buckets.length) {
           val curSpan = data(buckets(i)._1) - data(buckets(i - 1)._1)

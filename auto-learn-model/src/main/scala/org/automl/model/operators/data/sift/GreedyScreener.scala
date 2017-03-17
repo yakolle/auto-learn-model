@@ -27,7 +27,7 @@ class GreedyScreener extends SiftFeaturesBase {
   //greedy beam search的beam size
   private val beamSize = 3
 
-  //动态增益比率，按照TD(forgottenFactor)学习过程进行更新
+  //动态增益比率，按照随机逼近（遗忘算法）学习过程进行更新
   private var gainRatio = gainThreshold
 
   //选择后的特征集合
