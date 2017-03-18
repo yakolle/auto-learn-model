@@ -32,7 +32,7 @@ object TaskBuilder {
   //收敛记录buffer的大小
   val convergeRecBufferSize = 10
   //收敛判断时稳定时验证值的容忍阈值
-  var validationTolerance = 1E-3
+  var validationTolerance = 1E-4
   //收敛判断时最大稳定次数
   var maxSteadyTimes = 20
 
