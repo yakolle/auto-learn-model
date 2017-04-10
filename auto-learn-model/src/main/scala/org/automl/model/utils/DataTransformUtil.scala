@@ -12,7 +12,7 @@ object DataTransformUtil {
     * 将数据转换为向量形式（所有的输入X汇集成向量形式）
     *
     * @param data 原数据（每一列为一个特征）
-    * @return 新数据（只有两列，一列为features——原来输入数据X汇集的向量形式，一列为target——原来的target列）
+    * @return 新数据（只有两列，一列为features——原来输入数据X汇集的向量形式，一列为label——原来的label列）
     */
   def dataSchemaTransform(data: DataFrame) = new VectorAssembler().setInputCols(data.columns.filter(_ != "label"))
     .setOutputCol("features").transform(data).select("features", "label")

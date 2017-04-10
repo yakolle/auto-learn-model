@@ -54,6 +54,15 @@ class NaNHandler extends TransformBase {
   }
 
   /**
+    * 更新超参数，如果算子不需要参数可以不用重写该方法，否则必须重写该方法
+    *
+    * @param params 要更新的超参数
+    */
+  override def updateParam(params: Array[Double]) {
+    this.params = params
+  }
+
+  /**
     * 重载Object的clone方法，子类如果有参数或者一些引用型(AnyRef)的属性，必须重写该方法
     *
     * @return 复制后的对象

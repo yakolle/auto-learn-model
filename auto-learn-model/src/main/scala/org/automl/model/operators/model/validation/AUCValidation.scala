@@ -17,7 +17,7 @@ class AUCValidation extends ValidationBase {
   protected var aucArray: Array[(Double, Double)] = new Array[(Double, Double)](1)
 
   /**
-    * 运行AUC模型验证算子，评估数据（包含X,y）共两列，X为features(一列)，y为target（一列），并且每一行的features为
+    * 运行AUC模型验证算子，评估数据（包含X,y）共两列，X为features(一列)，y为label（一列），并且每一行的features为
     * 一个assembledVector，并非每个feature为一列，如有需要可考虑用DataTransformUtil.dataSchemaTransform进行transform
     *
     * @param trainData 训练数据（包含X,y）
@@ -55,7 +55,7 @@ object AUCValidation {
   /**
     * 预测得分
     *
-    * @param data  评估数据（包含X,y）共两列，X为features(一列)，y为target（一列），并且每一行的features为一个assembledVector，
+    * @param data  评估数据（包含X,y）共两列，X为features(一列)，y为label（一列），并且每一行的features为一个assembledVector，
     *              并非每个feature为一列，可考虑用DataTransformUtil.dataSchemaTransform进行transform
     * @param model 预测模型
     * @return 由model得出的预测得分
@@ -69,7 +69,7 @@ object AUCValidation {
   /**
     * 计算AUC
     *
-    * @param data  评估数据（包含X,y）共两列，X为features(一列)，y为target（一列），并且每一行的features为一个assembledVector，
+    * @param data  评估数据（包含X,y）共两列，X为features(一列)，y为label（一列），并且每一行的features为一个assembledVector，
     *              并非每个feature为一列，可考虑用DataTransformUtil.dataSchemaTransform进行transform
     * @param model 预测模型
     * @return auc

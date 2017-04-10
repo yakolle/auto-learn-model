@@ -43,11 +43,11 @@ class OutlierHandler extends TransformBase {
     val identifyMethod = OutlierHandler.extractHandlerParams(params.tail)._1
     if (OutlierHandler.IDENTIFY_METHOD_GAUSSIAN_MEAN == identifyMethod) {
       val statisticSummary = Statistics.colStats(data.rdd.map(rec => Vectors.dense(rec.toSeq.toArray.asInstanceOf[Array[Double]])))
-      means = statisticSummary.mean.toArray
-      stds = statisticSummary.variance.toArray.map(math.sqrt)
+      means = statisticSummary.mean.toArray.dropRight(1)
+      stds = statisticSummary.variance.toArray.dropRight(1).map(math.sqrt)
     } else if (OutlierHandler.IDENTIFY_METHOD_GAUSSIAN_MEDIAN == identifyMethod) {
       stds = Statistics.colStats(data.rdd.map(rec => Vectors.dense(rec.toSeq.toArray.asInstanceOf[Array[Double]]))).variance.toArray
-        .map(math.sqrt)
+        .dropRight(1).map(math.sqrt)
       medians = data.columns.filter(_ != "label").map(data.stat.approxQuantile(_, Array(0.5), relativeError).head)
     } else {
       val quantiles = data.columns.filter(_ != "label").map(data.stat.approxQuantile(_, Array(0.25, 0.5, 0.75), relativeError))
@@ -70,23 +70,23 @@ class OutlierHandler extends TransformBase {
 
     val transformedData = if (OutlierHandler.IDENTIFY_METHOD_GAUSSIAN_MEAN == identifyMethod)
       data.rdd.map { line =>
-        Row.fromSeq(for (i <- 0 until line.length) yield {
+        Row.fromSeq((for (i <- stds.indices) yield {
           val outlierSpan = identifyParam * stds(i)
           math.min(math.max(line(i).asInstanceOf[Double], means(i) - outlierSpan), means(i) + outlierSpan)
-        })
+        }) :+ line(line.length - 1).asInstanceOf[Double])
       } else if (OutlierHandler.IDENTIFY_METHOD_GAUSSIAN_MEDIAN == identifyMethod)
       data.rdd.map { line =>
-        Row.fromSeq(for (i <- 0 until line.length) yield {
+        Row.fromSeq((for (i <- stds.indices) yield {
           val outlierSpan = identifyParam * stds(i)
           math.min(math.max(line(i).asInstanceOf[Double], medians(i) - outlierSpan), medians(i) + outlierSpan)
-        })
+        }) :+ line(line.length - 1).asInstanceOf[Double])
       }
     else if (OutlierHandler.IDENTIFY_METHOD_TUKEY == identifyMethod)
       data.rdd.map { line =>
-        Row.fromSeq(for (i <- 0 until line.length) yield {
+        Row.fromSeq((for (i <- q1s.indices) yield {
           val outlierSpan = identifyParam * (q3s(i) - q1s(i))
           math.min(math.max(line(i).asInstanceOf[Double], q1s(i) - outlierSpan), q3s(i) + outlierSpan)
-        })
+        }) :+ line(line.length - 1).asInstanceOf[Double])
       }
     else data.rdd
 
@@ -153,7 +153,7 @@ class OutlierHandler extends TransformBase {
   override def updateParam(params: Array[Double]) {
     this.params = if (0.0 == params.head) {
       this.on = false
-      Array.fill(getParamNum + 1)(0.0)
+      Array.fill(getParamNum)(0.0)
     } else {
       this.on = true
       var isChosen = false

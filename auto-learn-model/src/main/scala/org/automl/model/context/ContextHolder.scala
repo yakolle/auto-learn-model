@@ -42,6 +42,15 @@ object ContextHolder {
   }
 
   /**
+    * 创建数据schema
+    *
+    * @param featuresLen 特征数
+    * @return schema（只有两列，一列为features——向量形式，一列为label列）
+    */
+  def buildSchema(featuresLen: Int): StructType = StructType(Array(new AttributeGroup("features", Array.fill(featuresLen)(NumericAttribute.defaultAttr).asInstanceOf[Array[Attribute]]).toStructField,
+    StructField("label", DoubleType, nullable = false)))
+
+  /**
     * 将数据按照当前的sqlContext转换成DataFrame
     *
     * @param data 数据
@@ -52,11 +61,7 @@ object ContextHolder {
     val rowList = new util.ArrayList[Row]
     data.foreach(rec => rowList.add(Row(Vectors.dense(rec.take(featuresLen)), rec.last)))
 
-    val featuresAttrs = Array.fill(featuresLen)(NumericAttribute.defaultAttr)
-    val schema = StructType(Array(new AttributeGroup("features", featuresAttrs.asInstanceOf[Array[Attribute]]).toStructField,
-      StructField("label", DoubleType, nullable = false)))
-
-    sparkSession.createDataFrame(rowList, schema)
+    sparkSession.createDataFrame(rowList, buildSchema(featuresLen))
   }
 
   /**

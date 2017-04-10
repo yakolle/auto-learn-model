@@ -62,8 +62,13 @@ abstract class TransformBase extends BaseOperator {
     * @param params 要更新的超参数
     */
   override def updateParam(params: Array[Double]) {
-    this.on = 1.0 == params.head
-    this.params = params
+    this.params = if (0.0 == params.head) {
+      this.on = false
+      Array.fill(getParamNum)(0.0)
+    } else {
+      this.on = true
+      params
+    }
   }
 
   /**
