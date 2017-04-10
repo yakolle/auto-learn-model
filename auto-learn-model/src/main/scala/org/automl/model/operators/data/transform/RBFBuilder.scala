@@ -2,9 +2,11 @@ package org.automl.model.operators.data.transform
 
 import java.io.{BufferedWriter, IOException}
 
-import org.apache.spark.sql.DataFrame
+import org.apache.spark.ml.linalg.{Vector, Vectors}
+import org.apache.spark.sql.{DataFrame, Row}
 import org.automl.model.context.ContextHolder
 import org.automl.model.operators.BaseOperator
+import org.automl.model.utils.SimilarityUtil
 
 /**
   * Created by okay on 2017/4/10.
@@ -28,7 +30,7 @@ class RBFBuilder extends TransformBase {
   /**
     * 运行数据处理算子
     *
-    * @param data 数据（包含X,y）
+    * @param data 数据（包含X,y），其中X为Vector[Double]类型
     * @return 经过处理后的数据
     */
   override def run(data: DataFrame): DataFrame = {
@@ -39,18 +41,17 @@ class RBFBuilder extends TransformBase {
   /**
     * 对数据进行transform
     *
-    * @param data 数据（包含X,y）
+    * @param data 数据（包含X,y），其中X为Vector[Double]类型
     * @return transform后的数据
     */
   override def transform(data: DataFrame): DataFrame = {
     val transformedData = data.rdd.map {
       row =>
-        val x = (for (i <- 0 until row.length) yield row(i).asInstanceOf[Double]).toArray
-        val transformedRow = for (i <- clusterCenters.indices) yield {
-
-        }
-
-        row
+        val feature = row.getAs[Vector](0).toArray
+        Row(Vectors.dense((for (i <- clusterCenters.indices) yield {
+          val dist = SimilarityUtil.calcEuclideanDistance(feature, clusterCenters(i))
+          math.exp(-dist * dist / (2 * radiuses(i) * radiuses(i)))
+        }).toArray), row(1).asInstanceOf[Double])
     }
 
     data.sparkSession.createDataFrame(transformedData, ContextHolder.buildSchema(radiuses.length))

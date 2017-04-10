@@ -54,19 +54,6 @@
         </repository>
 
         <repository>
-            <id>oschina</id>
-            <name>Maven of oschina.net</name>
-            <url>http://maven.oschina.net/content/groups/public/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <layout>default</layout>
-        </repository>
-
-        <repository>
             <id>spring-libs-snapshot</id>
             <url>http://repo.spring.io/libs-snapshot</url>
             <snapshots>

@@ -47,8 +47,11 @@ object ContextHolder {
     * @param featuresLen 特征数
     * @return schema（只有两列，一列为features——向量形式，一列为label列）
     */
-  def buildSchema(featuresLen: Int): StructType = StructType(Array(new AttributeGroup("features", Array.fill(featuresLen)(NumericAttribute.defaultAttr).asInstanceOf[Array[Attribute]]).toStructField,
-    StructField("label", DoubleType, nullable = false)))
+  def buildSchema(featuresLen: Int): StructType = {
+    val featuresAttrs = Array.fill(featuresLen)(NumericAttribute.defaultAttr)
+    StructType(Array(new AttributeGroup("features", featuresAttrs.asInstanceOf[Array[Attribute]]).toStructField,
+      StructField("label", DoubleType, nullable = false)))
+  }
 
   /**
     * 将数据按照当前的sqlContext转换成DataFrame
