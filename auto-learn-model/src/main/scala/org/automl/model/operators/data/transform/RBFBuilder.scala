@@ -2,11 +2,13 @@ package org.automl.model.operators.data.transform
 
 import java.io.{BufferedWriter, IOException}
 
+import org.apache.spark.ml.clustering.KMeans
 import org.apache.spark.ml.linalg.{Vector, Vectors}
+import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, Row}
 import org.automl.model.context.ContextHolder
 import org.automl.model.operators.BaseOperator
-import org.automl.model.utils.SimilarityUtil
+import org.automl.model.utils.{DataTransformUtil, SimilarityUtil}
 
 /**
   * Created by okay on 2017/4/10.
@@ -34,7 +36,16 @@ class RBFBuilder extends TransformBase {
     * @return 经过处理后的数据
     */
   override def run(data: DataFrame): DataFrame = {
+    val k = (params(1) * DataTransformUtil.extractFeatureNamesFromAssembledData(data).length).toInt
+    val model = new KMeans().setK(if (k < 2) 2 else k).setMaxIter(params(2).toInt).fit(data)
 
+    val centers = model.clusterCenters
+    val distUDF = udf((features: Vector, clusterIndex: Int) => Vectors.sqdist(features, centers(clusterIndex)))
+    val rs = model.transform(data).withColumn("dist", distUDF(col("features"), col("prediction")))
+      .groupBy("prediction").agg(max("dist")).collect().sortBy(_.getAs[Int](0)).map(_.getAs[Double](1) * params.last)
+
+    clusterCenters = centers.map(_.toArray)
+    radiuses = rs
     transform(data)
   }
 
@@ -45,13 +56,12 @@ class RBFBuilder extends TransformBase {
     * @return transform后的数据
     */
   override def transform(data: DataFrame): DataFrame = {
-    val transformedData = data.rdd.map {
-      row =>
-        val feature = row.getAs[Vector](0).toArray
-        Row(Vectors.dense((for (i <- clusterCenters.indices) yield {
-          val dist = SimilarityUtil.calcEuclideanDistance(feature, clusterCenters(i))
-          math.exp(-dist * dist / (2 * radiuses(i) * radiuses(i)))
-        }).toArray), row(1).asInstanceOf[Double])
+    val transformedData = data.rdd.map { row =>
+      val feature = row.getAs[Vector](0).toArray
+      Row(Vectors.dense((for (i <- clusterCenters.indices) yield {
+        val dist = SimilarityUtil.calcEuclideanDistance(feature, clusterCenters(i))
+        math.exp(-dist * dist / (2 * radiuses(i) * radiuses(i)))
+      }).toArray), row(1).asInstanceOf[Double])
     }
 
     data.sparkSession.createDataFrame(transformedData, ContextHolder.buildSchema(radiuses.length))
