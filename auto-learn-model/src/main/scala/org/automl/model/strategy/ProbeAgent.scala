@@ -80,8 +80,8 @@ class ProbeAgent extends Runnable {
           task.testData = res._2
         case operator: BalanceBase => task.trainData = operator.run(task.trainData)
         case operator: FormatBase =>
-          task.trainData = operator.run(task.trainData)
-          task.testData = operator.run(task.testData)
+          task.trainData = operator.run(task.trainData).cache()
+          task.testData = operator.run(task.testData).cache()
         case operator: TransformBase =>
           if (operator.isOn) {
             task.trainData = operator.run(task.trainData).cache()

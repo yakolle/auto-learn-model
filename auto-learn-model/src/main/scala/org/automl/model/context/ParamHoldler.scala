@@ -18,17 +18,10 @@ object ParamHoldler {
   private var minParamDistance = Double.MaxValue
   private var maxParamDistance = Double.MinValue
 
-  //各超参数的范围
-  private var paramBoundaries: Array[(Double, Double)] = _
-
   //目前为止效果最好的搜索任务，第一个元素是算子序列（用算子序列，是方便取参数包括算子里别的属性），第二个是该次探索的实际验证值
   private var bestOperatorSequences: Array[(Array[BaseOperator], Double)] = _
 
   def getParams = params.toArray
-
-  def getParamBoundaries = this.paramBoundaries
-
-  def setParamBoundaries(paramBoundaries: Array[(Double, Double)]) = this.paramBoundaries = paramBoundaries
 
   /**
     * 更新超参数matrix

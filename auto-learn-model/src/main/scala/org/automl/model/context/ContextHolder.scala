@@ -48,7 +48,8 @@ object ContextHolder {
     * @return schema（只有两列，一列为features——向量形式，一列为label列）
     */
   def buildSchema(featuresLen: Int): StructType = {
-    val featuresAttrs = Array.fill(featuresLen)(NumericAttribute.defaultAttr)
+    var featuresAttrs = Array.fill(featuresLen)(NumericAttribute.defaultAttr)
+    featuresAttrs = (for (i <- featuresAttrs.indices) yield featuresAttrs(i).withName(i.toString)).toArray
     StructType(Array(new AttributeGroup("features", featuresAttrs.asInstanceOf[Array[Attribute]]).toStructField,
       StructField("label", DoubleType, nullable = false)))
   }

@@ -15,16 +15,16 @@ abstract class BaseOperator extends Cloneable {
   var procedureType: String = "base"
 
   //当前参数
-  protected var params = Array(1E-3)
+  protected var params: Array[Double] = Array()
 
   //warm start
-  protected var empiricalParams = Array(1E-3)
+  protected var empiricalParams: Array[Double] = Array()
   //各参数的搜索范围
-  protected var paramBoundaries = Array((0.0, 1.0))
+  protected var paramBoundaries: Array[(Double, Double)] = Array()
   //各参数的经验搜索步幅
-  protected var empiricalParamPaces = Array(1E-6)
+  protected var empiricalParamPaces: Array[Double] = Array()
   //各参数类型
-  protected var paramTypes = Array(BaseOperator.PARAM_TYPE_DOUBLE)
+  protected var paramTypes: Array[Int] = Array()
 
   /**
     * 获取算子的全称

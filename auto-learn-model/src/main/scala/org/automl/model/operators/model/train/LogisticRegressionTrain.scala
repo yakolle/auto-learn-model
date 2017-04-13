@@ -18,6 +18,7 @@ class LogisticRegressionTrain(kFold: Int = 5) extends TrainBase {
   this.empiricalParams = Array(0.2)
   this.paramBoundaries = Array((0.0, 100.0))
   this.empiricalParamPaces = Array(0.01)
+  this.paramTypes = Array(BaseOperator.PARAM_TYPE_DOUBLE)
 
   private val maxIterations = 100
 

@@ -22,6 +22,9 @@ class SparkIgniteScheduler extends ProbeSchedulerBase {
     */
   override def getNextParams(currentTask: ProbeTask): Array[Double] = {
     val (param1, param2) = getFarthestParams
-    (for (i <- 0 until param1.length - 1) yield (param1(i) + param2(i)) / 2.0).toArray
+    (for (i <- 0 until param1.length - 1) yield {
+      if (param1(i).isValidInt && param2(i).isValidInt) math.round((param1(i) + param2(i)) / 2.0)
+      else (param1(i) + param2(i)) / 2.0
+    }).toArray
   }
 }

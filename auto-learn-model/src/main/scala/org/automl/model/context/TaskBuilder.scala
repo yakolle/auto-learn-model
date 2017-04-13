@@ -12,7 +12,6 @@ import org.automl.model.strategy.learn.{AdaptableLearner, LearnerBase}
 import org.automl.model.strategy.scheduler.{AdaptableScheduler, ProbeSchedulerBase}
 import org.automl.model.strategy.{ProbeAgent, ProbeTask}
 
-import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 /**
@@ -107,8 +106,6 @@ object TaskBuilder {
     * @return 探测任务数组
     */
   def buildProbeTask(operators: Array[BaseOperator], data: DataFrame, buildNum: Int): Array[ProbeTask] = {
-    val paramBoundaries = new ArrayBuffer[(Double, Double)]
-
     val randomGenerator = Random
     val tasks = for (i <- 1 to buildNum) yield {
       val newOperators = operators.map {
@@ -116,8 +113,6 @@ object TaskBuilder {
           val copy = operator.clone
           val params = for (j <- 0 until copy.getParamNum) yield {
             val boundaryPair = copy.getParamBoundary(null, j)
-            //超参数边界对每条搜索线都是一样的，所以只需要计算一次
-            if (1 == i) paramBoundaries += boundaryPair
             //对每条线的初始搜索点进行随机化（高斯随机）探索
             var param = copy.getEmpiricalParam(null, j) + copy.getEmpiricalParamPace(null, j) * randomGenerator.nextGaussian
             param = if (param > boundaryPair._2) boundaryPair._2 else if (param < boundaryPair._1) boundaryPair._1 else param
@@ -131,7 +126,6 @@ object TaskBuilder {
       new ProbeTask(newOperators, data)
     }
     //保存每个超参数的边界
-    ParamHoldler.setParamBoundaries(paramBoundaries.toArray)
     tasks.toArray
   }
 
