@@ -19,7 +19,7 @@ import scala.util.Random
   */
 object TaskBuilder {
   //学习器进行全部批量学习的时间间隔
-  var learnInterval = 100 * 1000
+  var learnInterval: Int = 100 * 1000
   //最大搜索次数
   var maxIterations = 10000
   //最小搜索次数
@@ -38,7 +38,7 @@ object TaskBuilder {
   //超参数相似度阈值，如果小于该阈值，就认为两个超参数是一样的
   var paramSimilarityZeroDomain = 1E-6
 
-  def initContext(args: Array[String]) = {
+  def initContext(args: Array[String]): SparkSession = {
     SparkSession.builder.master("local[2]").appName("automl")
       .config("spark.worker.timeout", "20").config("spark.executor.memory", "1g")
       .getOrCreate()

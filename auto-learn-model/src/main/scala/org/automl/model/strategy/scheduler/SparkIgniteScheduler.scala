@@ -12,7 +12,7 @@ class SparkIgniteScheduler extends ProbeSchedulerBase {
     *
     * @return 距离最远的两个参数
     */
-  protected def getFarthestParams = ParamHoldler.getFarthestParams
+  protected def getFarthestParams: (Array[Double], Array[Double]) = ParamHoldler.getFarthestParams
 
   /**
     * 获取下次要probe的超参数列表，子类需要重写该方法

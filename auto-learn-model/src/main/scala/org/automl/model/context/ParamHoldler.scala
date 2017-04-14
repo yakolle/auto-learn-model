@@ -21,7 +21,7 @@ object ParamHoldler {
   //目前为止效果最好的搜索任务，第一个元素是算子序列（用算子序列，是方便取参数包括算子里别的属性），第二个是该次探索的实际验证值
   private var bestOperatorSequences: Array[(Array[BaseOperator], Double)] = _
 
-  def getParams = params.toArray
+  def getParams: Array[Array[Double]] = params.toArray
 
   /**
     * 更新超参数matrix
@@ -48,9 +48,9 @@ object ParamHoldler {
     *
     * @return 所有agent一共探测了多少次
     */
-  def getRunTimes = params.size
+  def getRunTimes: Int = params.size
 
-  def getBestOperatorSequences = bestOperatorSequences
+  def getBestOperatorSequences: Array[(Array[BaseOperator], Double)] = bestOperatorSequences
 
   /**
     * 初始化效果最好的搜索任务buffer
@@ -71,7 +71,7 @@ object ParamHoldler {
     bestOperatorSequences.synchronized {
       //对最好集合里的验证值最小的一个进行更新，如果本次探测的效果更好的话
       val minTuple = bestOperatorSequences.foldLeft((Double.MaxValue, -1, 0)) {
-        case ((min, minIndex, index), (operatorArray, value)) =>
+        case ((min, minIndex, index), (_, value)) =>
           if (value < min) (value, index, index + 1) else (min, minIndex, index + 1)
       }
       val validation = probeTask.getFinalValidation
@@ -143,7 +143,7 @@ object ParamHoldler {
     *
     * @return 距离最远的两个参数
     */
-  def getFarthestParams = {
+  def getFarthestParams: (Array[Double], Array[Double]) = {
     val (_, paramIndex1, paramIndex2) = SparsityUtil.findMaxGap(paramDistances.toArray, minParamDistance, maxParamDistance)
     (params(paramIndex1), params(paramIndex2))
   }

@@ -41,7 +41,7 @@ abstract class LearnerBase extends Cloneable {
     *
     * @return 各超参数重要程度评估，各子类要保证重要程度都是非负的，并且是归一化的
     */
-  def getParamImportances = getWeights
+  def getParamImportances: Array[Double] = getWeights
 
   /**
     * 获取各超参数的权重

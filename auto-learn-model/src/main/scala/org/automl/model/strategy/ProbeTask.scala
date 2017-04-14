@@ -28,9 +28,9 @@ class ProbeTask(private val operatorChain: Array[BaseOperator], var data: DataFr
     *
     * @return 算子序列
     */
-  def getOperatorChain = this.operatorChain
+  def getOperatorChain: Array[BaseOperator] = this.operatorChain
 
-  def getSavepoint = this.savepoint
+  def getSavepoint: ArrayBuffer[(Int, DataFrame, DataFrame)] = this.savepoint
 
   /**
     * 获取当前任务的超参数数组
@@ -47,7 +47,7 @@ class ProbeTask(private val operatorChain: Array[BaseOperator], var data: DataFr
     *
     * @return 当前任务的超参数的参数类型数组
     */
-  def getParamTypes = operatorChain.flatMap {
+  def getParamTypes: Array[Int] = operatorChain.flatMap {
     operator =>
       for (i <- 0 until operator.getParamNum) yield operator.getParamType(i)
   }

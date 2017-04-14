@@ -57,8 +57,8 @@ object SampleUtil {
     * @param stdWidthRatio   标准差宽度占比，标准差与期望的比率
     * @return 经过处理后的高斯随机数
     */
-  def getNextGaussian(randomGenerator: Random, mean: Double, stdWidthRatio: Double = 0.1) =
-  mean + randomGenerator.nextGaussian * stdWidthRatio * math.abs(mean)
+  def getNextGaussian(randomGenerator: Random, mean: Double, stdWidthRatio: Double = 0.1): Double =
+    mean + randomGenerator.nextGaussian * stdWidthRatio * math.abs(mean)
 
   /**
     * 获取高斯随机数，以mean为期望，stdWidthRatio*mean为标准差，并且以stdWidthRatio*mean*thresholdRatio为界限截断尾部
@@ -69,7 +69,7 @@ object SampleUtil {
     * @param thresholdRatio  对thresholdRatio个标准差后的高斯数进行截断
     * @return 经过处理后的高斯随机数
     */
-  def getNextTrimmedGaussian(randomGenerator: Random, mean: Double, stdWidthRatio: Double = 0.1, thresholdRatio: Double = 3.0) = {
+  def getNextTrimmedGaussian(randomGenerator: Random, mean: Double, stdWidthRatio: Double = 0.1, thresholdRatio: Double = 3.0): Double = {
     val threshold = math.abs(mean) * stdWidthRatio * thresholdRatio
     val gaussian = getNextGaussian(randomGenerator, mean, stdWidthRatio)
     if (gaussian > mean + threshold) mean + threshold else if (gaussian < mean - threshold) mean - threshold else gaussian
@@ -84,7 +84,7 @@ object SampleUtil {
     * @param thresholdRatio  对thresholdRatio个标准差后的高斯数进行截断
     * @return 经过处理后的高斯随机数
     */
-  def getNextNonNegativeTrimmedGaussian(randomGenerator: Random, mean: Double, stdWidthRatio: Double = 0.1, thresholdRatio: Double = 3.0) = {
+  def getNextNonNegativeTrimmedGaussian(randomGenerator: Random, mean: Double, stdWidthRatio: Double = 0.1, thresholdRatio: Double = 3.0): Double = {
     val gaussian = getNextTrimmedGaussian(randomGenerator, mean, stdWidthRatio, thresholdRatio)
     if (gaussian < 0.0) 0.0 else gaussian
   }

@@ -42,7 +42,7 @@ class ProbeAgent extends Runnable {
     }
   }
 
-  def run(task: ProbeTask) = {
+  def run(task: ProbeTask) {
     val operatorChain = task.getOperatorChain
     val operatorNum = operatorChain.length
 

@@ -191,7 +191,7 @@ object OutlierHandler {
     *
     * @return 异常值处理算子的个数
     */
-  def getHandlerNum = 4 + 4 + 7
+  def getHandlerNum: Int = 4 + 4 + 7
 
   /**
     * 从params中提取异常值替换方法，识别方法及相应参数
@@ -199,7 +199,7 @@ object OutlierHandler {
     * @param params 参数列表，实际上是替换方法和识别方法及参数的组合，one_hot编码
     * @return 返回值格式为(异常值替换方法,异常值识别方法,异常值识别方法对应参数)
     */
-  def extractHandlerParams(params: Array[Double]) = {
+  def extractHandlerParams(params: Array[Double]): (Int, Double) = {
     val index = params.indexWhere(_ == 1.0)
 
     index match {

@@ -27,7 +27,7 @@ object ContextHolder {
   private val convergeRecBuffer: ArrayBuffer[(Int, Int, Double, Array[Array[Double]])] = new ArrayBuffer[(Int, Int, Double,
     Array[Array[Double]])](TaskBuilder.convergeRecBufferSize)
 
-  def getConvergeRecords = convergeRecBuffer
+  def getConvergeRecords: ArrayBuffer[(Int, Int, Double, Array[Array[Double]])] = convergeRecBuffer
 
   def setSparkSession(sparkSession: SparkSession) {
     if (null == this.sparkSession) this.sparkSession = sparkSession

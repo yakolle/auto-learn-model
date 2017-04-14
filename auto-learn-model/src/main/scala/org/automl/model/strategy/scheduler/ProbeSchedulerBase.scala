@@ -25,9 +25,11 @@ abstract class ProbeSchedulerBase {
   //如果策略选取的参数评估一直不通过，最大的尝试次数
   protected val maxSinkingTimes = 10
 
-  def setMaxEstimateAcceptRatio(maxEstimateAcceptRatio: Double) = this.maxEstimateAcceptRatio = maxEstimateAcceptRatio
+  def setMaxEstimateAcceptRatio(maxEstimateAcceptRatio: Double) {
+    this.maxEstimateAcceptRatio = maxEstimateAcceptRatio
+  }
 
-  def getMaxEstimateAcceptRatio = maxEstimateAcceptRatio
+  def getMaxEstimateAcceptRatio: Double = maxEstimateAcceptRatio
 
   def setLearner(learner: LearnerBase) {
     this.learner = learner

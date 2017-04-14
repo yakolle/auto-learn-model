@@ -21,7 +21,7 @@ class AdaptableScheduler extends ProbeSchedulerBase {
   private val weightForgottenFactor = 0.2
 
   //策略集合
-  val schedulerArray = Array[ProbeSchedulerBase](new CrossoverScheduler, new MutationScheduler, new RegressionScheduler,
+  val schedulerArray: Array[ProbeSchedulerBase] = Array[ProbeSchedulerBase](new CrossoverScheduler, new MutationScheduler, new RegressionScheduler,
     new BoundaryExpandScheduler, new DesertPlowScheduler, new RegressionIgniteScheduler, new MutationIgniteScheduler)
   //各策略初始权重
   private val schedulerWeights = Array.fill(schedulerArray.length)(1.0)

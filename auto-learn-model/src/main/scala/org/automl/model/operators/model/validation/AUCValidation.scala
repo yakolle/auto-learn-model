@@ -74,7 +74,7 @@ object AUCValidation {
     * @param model 预测模型
     * @return auc
     */
-  def calcAUC(data: DataFrame, model: PredictionModel[_, _]) = new BinaryClassificationMetrics(predict(data, model))
+  def calcAUC(data: DataFrame, model: PredictionModel[_, _]): Double = new BinaryClassificationMetrics(predict(data, model))
     .areaUnderROC
 }
 

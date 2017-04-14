@@ -55,7 +55,7 @@ object AssemblyValidation {
     * @param validations 验证值列表，列表里的元素格式为(trainValidation,testValidation)
     * @return 训练过程中融合验证值
     */
-  def assembleTrainValidation(validations: Array[(Double, Double)]) = assembleValidation(trainVWeights, validations)
+  def assembleTrainValidation(validations: Array[(Double, Double)]): Double = assembleValidation(trainVWeights, validations)
 
   /**
     * 根据融合权重，计算融合验证值
@@ -82,8 +82,8 @@ object AssemblyValidation {
     * @param trainedV  训练结束后验证值
     * @return 融合权重
     */
-  def assembleTrainingAndTrainedValidation(trainingV: Double, trainedV: Double) =
-  (trainingV * (trainingAndTrainedVWeight._1 * trainingV + trainingAndTrainedVWeight._4 + trainingAndTrainedVWeight._3 * trainedV)
-    + trainedV * (trainingAndTrainedVWeight._2 * trainedV + trainingAndTrainedVWeight._5))
+  def assembleTrainingAndTrainedValidation(trainingV: Double, trainedV: Double): Double =
+    (trainingV * (trainingAndTrainedVWeight._1 * trainingV + trainingAndTrainedVWeight._4 + trainingAndTrainedVWeight._3 * trainedV)
+      + trainedV * (trainingAndTrainedVWeight._2 * trainedV + trainingAndTrainedVWeight._5))
 
 }

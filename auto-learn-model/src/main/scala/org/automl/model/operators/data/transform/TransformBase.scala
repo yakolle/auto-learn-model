@@ -29,7 +29,7 @@ abstract class TransformBase extends BaseOperator {
     *
     * @return 该transform是否开启
     */
-  def isOn = on
+  def isOn: Boolean = on
 
   /**
     * 运行数据处理算子
