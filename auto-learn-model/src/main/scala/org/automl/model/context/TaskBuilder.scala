@@ -107,7 +107,7 @@ object TaskBuilder {
     */
   def buildProbeTask(operators: Array[BaseOperator], data: DataFrame, buildNum: Int): Array[ProbeTask] = {
     val randomGenerator = Random
-    val tasks = for (i <- 1 to buildNum) yield {
+    val tasks = for (_ <- 1 to buildNum) yield {
       val newOperators = operators.map {
         operator =>
           val copy = operator.clone
@@ -129,7 +129,7 @@ object TaskBuilder {
     tasks.toArray
   }
 
-  def buildProbeAgent(buildNum: Int): Array[ProbeAgent] = (for (i <- 1 to buildNum) yield new ProbeAgent).toArray
+  def buildProbeAgent(buildNum: Int): Array[ProbeAgent] = (for (_ <- 1 to buildNum) yield new ProbeAgent).toArray
 
   /**
     * 创建参数学习评估器

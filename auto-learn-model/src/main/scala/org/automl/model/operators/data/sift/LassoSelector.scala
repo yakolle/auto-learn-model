@@ -21,6 +21,7 @@ class LassoSelector extends SiftFeaturesBase {
   this.paramBoundaries = Array((0.0, 1.0))
   //lamda的经验搜索步幅
   this.empiricalParamPaces = Array(1E-6)
+  this.paramTypes = Array(BaseOperator.PARAM_TYPE_DOUBLE)
 
   private val maxIterations = 100
   private val zeroDomain = 1E-6
