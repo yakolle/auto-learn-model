@@ -51,18 +51,13 @@ class MutationIgniteScheduler extends SparkIgniteScheduler {
 
     //获取变异点是该算子的第几个参数
     val offset = mutationPoint - currentTask.getParamIndexRange(runPoint)._1
-    var paramEle = 0.0
-    if (BaseOperator.PARAM_TYPE_BOOLEAN == operator.getParamType(offset)) paramEle = 1 - operator.getCurrentParam(offset)
+    val paramEle = if (BaseOperator.PARAM_TYPE_BOOLEAN == operator.getParamType(offset)) 1 - operator.getCurrentParam(offset)
     else {
       //计算变异幅度
       val fluctuation = operator.getEmpiricalParamPace(null, offset) * (fluctuationAmplifyFactor +
         math.abs(randomGenerator.nextGaussian))
       easeFluctuation()
-      paramEle = (if (randomGenerator.nextBoolean) fluctuation else -fluctuation) + param(mutationPoint)
-
-      val (bottom, upper) = operator.getParamBoundary(null, offset)
-      paramEle = if (paramEle > upper) upper else if (paramEle < bottom) bottom else paramEle
-      if (BaseOperator.PARAM_TYPE_INT == operator.getParamType(offset)) paramEle = math.round(paramEle)
+      (if (randomGenerator.nextBoolean) fluctuation else -fluctuation) + param(mutationPoint)
     }
 
     param(mutationPoint) = paramEle

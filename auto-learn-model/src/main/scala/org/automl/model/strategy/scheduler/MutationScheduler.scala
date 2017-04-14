@@ -61,11 +61,8 @@ class MutationScheduler extends ProbeSchedulerBase {
         operator.getEmpiricalParamPace(null, offset) * math.abs(randomGenerator.nextGaussian)
       fluctuation = if (randomGenerator.nextBoolean) randomGenerator.nextDouble * fluctuation else -randomGenerator.nextDouble * fluctuation
       param = operator.getEmpiricalParam(null, offset) + fluctuation * fluctuationAmplifyFactor
-      easeFluctuation()
 
-      val (bottom, upper) = operator.getParamBoundary(null, offset)
-      param = if (param > upper) upper else if (param < bottom) bottom else param
-      if (BaseOperator.PARAM_TYPE_INT == operator.getParamType(offset)) param = math.round(param)
+      easeFluctuation()
     }
 
     val paramArray = currentTask.getParams

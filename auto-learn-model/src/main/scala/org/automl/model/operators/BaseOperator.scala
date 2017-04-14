@@ -88,8 +88,30 @@ abstract class BaseOperator extends Cloneable {
     *
     * @param params 要更新的超参数
     */
-  def updateParam(params: Array[Double]) {
+  protected def updateParamInternal(params: Array[Double]) {
     this.params = params
+  }
+
+  /**
+    * 更新超参数，模板方法，如无必要，子类无需重写该方法
+    *
+    * @param params 要更新的超参数
+    */
+  def updateParam(params: Array[Double]) {
+    updateParamInternal(params)
+
+    this.params = (for (i <- 0 until getParamNum) yield {
+      val param = params(i)
+      val (bottom, upper) = getParamBoundary(null, i)
+      if (param >= upper) upper
+      else if (param <= bottom) bottom
+      else {
+        val paramType = getParamType(i)
+        if (BaseOperator.PARAM_TYPE_INT == paramType || BaseOperator.PARAM_TYPE_BOOLEAN == paramType)
+          math.round(param)
+        else param
+      }
+    }).toArray
   }
 
   /**

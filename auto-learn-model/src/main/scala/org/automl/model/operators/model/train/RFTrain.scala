@@ -91,7 +91,7 @@ class RFTrain(kFold: Int = 5) extends TrainBase {
     *
     * @param params 要更新的超参数
     */
-  override def updateParam(params: Array[Double]) {
+  override protected def updateParamInternal(params: Array[Double]) {
     this.params = if (params(0) < 5.0) params.updated(1, 0.0) else params
   }
 

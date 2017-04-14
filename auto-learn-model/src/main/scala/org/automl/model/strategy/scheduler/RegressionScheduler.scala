@@ -1,7 +1,6 @@
 package org.automl.model.strategy.scheduler
 
 import org.automl.model.context.ParamHoldler
-import org.automl.model.operators.BaseOperator
 import org.automl.model.strategy.ProbeTask
 
 /**
@@ -83,13 +82,8 @@ class RegressionScheduler extends ProbeSchedulerBase {
       operator =>
         for (j <- 0 until operator.getParamNum) yield {
           paramIndex += 1
-          val (bottom, upper) = operator.getParamBoundary(null, j)
           //按照欧式空间中的欧式长度（nextPace）进行分解
-          var param = chosenRow(paramIndex) + paramWeights(paramIndex) * nextPace / paramWeightSum
-          param = if (param > upper) upper else if (param < bottom) bottom else param
-          if (BaseOperator.PARAM_TYPE_BOOLEAN == operator.getParamType(j) || BaseOperator.PARAM_TYPE_INT == operator.getParamType(j))
-            math.round(param)
-          else param
+          chosenRow(paramIndex) + paramWeights(paramIndex) * nextPace / paramWeightSum
         }
     }
   }

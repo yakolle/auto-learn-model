@@ -58,7 +58,7 @@ class NaNHandler extends TransformBase {
     *
     * @param params 要更新的超参数
     */
-  override def updateParam(params: Array[Double]) {
+  override protected def updateParamInternal(params: Array[Double]) {
     this.params = params
   }
 

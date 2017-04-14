@@ -40,17 +40,11 @@ class BoundaryExpandScheduler extends ProbeSchedulerBase {
       else {
         val fluctuation = operator.getEmpiricalParamPace(null, offset) * (1.0 + math.abs(randomGenerator.nextGaussian))
         param = if (randomGenerator.nextBoolean) curMaxParam + fluctuation else curMinParam - fluctuation
-        if (BaseOperator.PARAM_TYPE_INT == operator.getParamType(offset)) param = math.round(param)
       }
       val (bottom, upper) = operator.getParamBoundary(null, offset)
       disableExpandParamIndices.synchronized {
-        param = if (param >= upper) {
-          if (curMinParam == bottom) disableExpandParamIndices += expandPoint
-          upper
-        } else if (param <= bottom) {
-          if (curMaxParam == upper) disableExpandParamIndices += expandPoint
-          bottom
-        } else param
+        if (param >= upper && curMinParam == bottom) disableExpandParamIndices += expandPoint
+        else if (param <= bottom && curMaxParam == upper) disableExpandParamIndices += expandPoint
       }
 
       val paramArray = currentTask.getParams

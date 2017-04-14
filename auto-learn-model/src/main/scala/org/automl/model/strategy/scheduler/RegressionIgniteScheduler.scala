@@ -1,6 +1,5 @@
 package org.automl.model.strategy.scheduler
 
-import org.automl.model.operators.BaseOperator
 import org.automl.model.strategy.ProbeTask
 
 /**
@@ -29,13 +28,8 @@ class RegressionIgniteScheduler extends SparkIgniteScheduler {
       operator =>
         for (j <- 0 until operator.getParamNum) yield {
           paramIndex += 1
-          val (bottom, upper) = operator.getParamBoundary(null, j)
           //按照欧式空间中的欧式长度（nextPace）进行分解
-          var paramEle = param(paramIndex) + paramWeights(paramIndex) * nextPace / paramWeightSum
-          paramEle = if (paramEle > upper) upper else if (paramEle < bottom) bottom else paramEle
-          if (BaseOperator.PARAM_TYPE_BOOLEAN == operator.getParamType(j) || BaseOperator.PARAM_TYPE_INT == operator.getParamType(j))
-            math.round(paramEle)
-          else paramEle
+          param(paramIndex) + paramWeights(paramIndex) * nextPace / paramWeightSum
         }
     }
   }

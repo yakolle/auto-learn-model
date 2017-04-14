@@ -1,7 +1,6 @@
 package org.automl.model.strategy.scheduler
 
 import org.automl.model.context.ParamHoldler
-import org.automl.model.operators.BaseOperator
 import org.automl.model.strategy.ProbeTask
 import org.automl.model.utils.{SampleUtil, SparsityUtil}
 
@@ -38,10 +37,8 @@ class DesertPlowScheduler extends ProbeSchedulerBase {
       val plowParam = ParamHoldler.getParams.map(_ (plowPoint))
       val (curMinParam, curMaxParam) = (plowParam.min, plowParam.max)
       val (isBalanced, paramIndex1, paramIndex2) = SparsityUtil.findMaxGap(plowParam, curMinParam, curMaxParam)
-      var param = (plowParam(paramIndex1) + plowParam(paramIndex2)) / 2.0
+      val param = (plowParam(paramIndex1) + plowParam(paramIndex2)) / 2.0
 
-      if (BaseOperator.PARAM_TYPE_INT == operator.getParamType(offset) || BaseOperator.PARAM_TYPE_BOOLEAN == operator.getParamType(offset))
-        param = math.round(param)
       val (bottom, upper) = operator.getParamBoundary(null, offset)
       if (isBalanced && curMinParam == bottom && curMaxParam == upper) disableExpandParamIndices.synchronized {
         disableExpandParamIndices += plowPoint
