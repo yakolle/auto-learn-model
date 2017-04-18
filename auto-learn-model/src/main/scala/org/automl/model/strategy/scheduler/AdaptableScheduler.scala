@@ -81,7 +81,7 @@ class AdaptableScheduler extends ProbeSchedulerBase {
     * @param currentTask 当前probe任务
     * @return 下次要probe的超参数列表
     */
-  override def getNextParams(currentTask: ProbeTask): Array[Double] = null
+  override def getNextParamsInternal(currentTask: ProbeTask): Array[Double] = null
 
   /**
     * 获取下次要probe的任务，主要是获取新的要probe的超参数，该方法为框架性方法，是提供给外部获取任务的接口，子类无需重写该方法
@@ -138,8 +138,8 @@ class AdaptableScheduler extends ProbeSchedulerBase {
       }
     } while (nextEstimate < currentEstimate && 1 - nextEstimate / currentEstimate > maxEstimateAcceptRatioNice * randomGenerator.nextDouble)
 
+    insertIntoParamSchedulerCache(nextParams, schedulerIndex)
     currentTask.updateParams(nextParams)
-    insertIntoParamSchedulerCache(currentTask.getParams.toIndexedSeq, schedulerIndex)
     currentTask
   }
 }

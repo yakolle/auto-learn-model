@@ -48,7 +48,8 @@ class RBFBuilder extends TransformBase {
     val rs = model.transform(data).withColumn("dist", distUDF(col("features"), col("prediction")))
       .groupBy("prediction").agg(max("dist")).collect().sortBy(_.getAs[Int](0)).map(_.getAs[Double](1) * params.last)
 
-    radiuses = rs
+    val minRadius = rs.minBy(radius => if (radius <= 0.0) Double.MaxValue else radius)
+    radiuses = rs.map(radius => if (radius <= 0.0) minRadius else radius)
     transform(data)
   }
 

@@ -13,7 +13,7 @@ class CrossoverScheduler extends ProbeSchedulerBase {
     * @param currentTask 当前probe任务
     * @return 下次要probe的超参数列表
     */
-  override def getNextParams(currentTask: ProbeTask): Array[Double] = {
+  override def getNextParamsInternal(currentTask: ProbeTask): Array[Double] = {
     val currentParams = currentTask.getParams
     val paramLen = currentParams.length
     if (paramLen <= 1) currentParams

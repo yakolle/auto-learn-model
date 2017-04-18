@@ -57,12 +57,13 @@ abstract class TransformBase extends BaseOperator {
   def explain(out: BufferedWriter)
 
   /**
-    * 更新超参数，如果算子不需要参数可以不用重写该方法，否则必须重写该方法
+    * 格式化超参数，如果算子不需要参数可以不用重写该方法，否则必须重写该方法
     *
-    * @param params 要更新的超参数
+    * @param params 需要格式化的超参数
+    * @return 格式化后的超参数
     */
-  override protected def updateParamInternal(params: Array[Double]) {
-    this.params = if (0.0 == params.head) {
+  override protected def formatParamInternal(params: Array[Double]): Array[Double] = {
+    if (0.0 == params.head) {
       this.on = false
       Array.fill(getParamNum)(0.0)
     } else {

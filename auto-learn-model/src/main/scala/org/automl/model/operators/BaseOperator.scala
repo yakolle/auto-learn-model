@@ -84,24 +84,24 @@ abstract class BaseOperator extends Cloneable {
   def getCurrentParam(paramIndex: Int): Double = params(paramIndex)
 
   /**
-    * 更新超参数，如果算子不需要参数可以不用重写该方法，否则必须重写该方法
+    * 格式化超参数，如果算子不需要参数可以不用重写该方法，否则必须重写该方法
     *
-    * @param params 要更新的超参数
+    * @param params 需要格式化的超参数
+    * @return 格式化后的超参数
     */
-  protected def updateParamInternal(params: Array[Double]) {
-    this.params = params
-  }
+  protected def formatParamInternal(params: Array[Double]): Array[Double] = params
 
   /**
-    * 更新超参数，模板方法，如无必要，子类无需重写该方法
+    * 格式化超参数，模板方法，如无必要，子类无需重写该方法
     *
-    * @param params 要更新的超参数
+    * @param params 需要格式化的超参数
+    * @return 格式化后的超参数
     */
-  def updateParam(params: Array[Double]) {
-    updateParamInternal(params)
+  def formatParam(params: Array[Double]): Array[Double] = {
+    val newParams = formatParamInternal(params)
 
-    this.params = (for (i <- 0 until getParamNum) yield {
-      val param = params(i)
+    (for (i <- 0 until getParamNum) yield {
+      val param = newParams(i)
       val (bottom, upper) = getParamBoundary(null, i)
       if (param >= upper) upper
       else if (param <= bottom) bottom
@@ -112,6 +112,15 @@ abstract class BaseOperator extends Cloneable {
         else param
       }
     }).toArray
+  }
+
+  /**
+    * 更新超参数，模板方法，如无必要，子类无需重写该方法
+    *
+    * @param params 要更新的超参数
+    */
+  def updateParam(params: Array[Double]) {
+    this.params = formatParam(params)
   }
 
   /**

@@ -68,6 +68,21 @@ class ProbeTask(private val operatorChain: Array[BaseOperator], var data: DataFr
   }
 
   /**
+    * 格式化当前任务所有算子的超参数
+    *
+    * @param params 需要格式化的超参数
+    * @return 格式化后的超参数
+    */
+  def formatParams(params: Array[Double]): Array[Double] = {
+    var right = 0
+    operatorChain.flatMap { operator =>
+      val left = right
+      right += operator.getParamNum
+      operator.formatParam(params.slice(left, right))
+    }
+  }
+
+  /**
     * 根据超参数在整个超参数序列中的索引获取任务运行点（实际上就是算子在算子序列中的索引）
     *
     * @param paramIndex 超参数在整个超参数序列中的索引

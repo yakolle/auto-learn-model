@@ -20,7 +20,7 @@ class SparkIgniteScheduler extends ProbeSchedulerBase {
     * @param currentTask 当前probe任务
     * @return 下次要probe的超参数列表
     */
-  override def getNextParams(currentTask: ProbeTask): Array[Double] = {
+  override def getNextParamsInternal(currentTask: ProbeTask): Array[Double] = {
     val (param1, param2) = getFarthestParams
     (for (i <- 0 until param1.length - 1) yield (param1(i) + param2(i)) / 2.0).toArray
   }

@@ -12,7 +12,7 @@ class RegressionIgniteScheduler extends SparkIgniteScheduler {
     * @param currentTask 当前probe任务
     * @return 下次要probe的超参数列表
     */
-  override def getNextParams(currentTask: ProbeTask): Array[Double] = {
+  override def getNextParamsInternal(currentTask: ProbeTask): Array[Double] = {
     val (param1, param2) = getFarthestParams
     val param = (for (i <- 0 until param1.length - 1) yield (param1(i) + param2(i)) / 2.0).toArray
     val nextPace = math.abs(param1.last - param2.last) / 2.0
@@ -29,7 +29,8 @@ class RegressionIgniteScheduler extends SparkIgniteScheduler {
         for (j <- 0 until operator.getParamNum) yield {
           paramIndex += 1
           //按照欧式空间中的欧式长度（nextPace）进行分解
-          param(paramIndex) + paramWeights(paramIndex) * nextPace / paramWeightSum
+          param(paramIndex) + (if (paramWeightSum <= 0.0) operator.getEmpiricalParamPace(null, j)
+          else paramWeights(paramIndex) * nextPace / paramWeightSum)
         }
     }
   }

@@ -87,12 +87,13 @@ class RFTrain(kFold: Int = 5) extends TrainBase {
   override def getValidation: Double = this.validation
 
   /**
-    * 更新超参数，如果算子不需要参数可以不用重写该方法，否则必须重写该方法
+    * 格式化超参数，如果算子不需要参数可以不用重写该方法，否则必须重写该方法
     *
-    * @param params 要更新的超参数
+    * @param params 需要格式化的超参数
+    * @return 格式化后的超参数
     */
-  override protected def updateParamInternal(params: Array[Double]) {
-    this.params = if (params(0) < 5.0) params.updated(1, 0.0) else params
+  override protected def formatParamInternal(params: Array[Double]): Array[Double] = {
+    if (params(0) < 5.0) params.updated(1, 0.0) else params
   }
 
   /**

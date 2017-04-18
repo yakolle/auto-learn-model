@@ -10,7 +10,7 @@ import org.automl.model.utils.MathUtil
   * Created by zhangyikuo on 2017/3/17.
   */
 class AdaptableLearner extends LearnerBase {
-  private val learnerArray = Array[LearnerBase](new LinearRegressionLearner, new GBTRegressionLearner)
+  private var learnerArray = Array[LearnerBase](new LinearRegressionLearner, new GBTRegressionLearner)
   private var learnerWeights = Array.fill(learnerArray.length)(1.0 / learnerArray.length.toDouble)
 
   /**
@@ -24,7 +24,9 @@ class AdaptableLearner extends LearnerBase {
     val errs = learnerArray.map { learner =>
       learner.predict(paramData).agg(sum(abs(col("prediction") - col("label")))).head.getDouble(0)
     }
-    val minMaxErr = errs.max + errs.min
+
+    //避免某些学习器的权重变成了0，即使有个学习器没有错误
+    val minMaxErr = errs.max * (1.0 + 1E-3) + errs.min
     val errSum = minMaxErr * errs.length - errs.sum
     val learnWeights = errs.map(err => (minMaxErr - err) / errSum)
 
@@ -100,5 +102,9 @@ class AdaptableLearner extends LearnerBase {
     *
     * @return 一个当前学习器的副本
     */
-  override def clone: LearnerBase = super.clone.asInstanceOf[AdaptableLearner]
+  override def clone: LearnerBase = {
+    val copy = super.clone.asInstanceOf[AdaptableLearner]
+    copy.learnerArray = learnerArray.map(_.clone)
+    copy
+  }
 }

@@ -80,7 +80,18 @@ abstract class ProbeSchedulerBase {
     * @param currentTask 当前probe任务
     * @return 下次要probe的超参数列表
     */
-  def getNextParams(currentTask: ProbeTask): Array[Double]
+  def getNextParamsInternal(currentTask: ProbeTask): Array[Double]
+
+  /**
+    * 模板方法，子类如无必要，可不用重写该方法
+    *
+    * @param currentTask 当前probe任务
+    * @return 下次要probe的超参数列表
+    */
+  def getNextParams(currentTask: ProbeTask): Array[Double] = {
+    val nextParams = getNextParamsInternal(currentTask)
+    if (null == nextParams) null else currentTask.formatParams(nextParams)
+  }
 
   /**
     * 获取下次要probe的任务，主要是获取新的要probe的超参数，该方法为框架性方法，是提供给外部获取任务的接口，子类无需重写该方法

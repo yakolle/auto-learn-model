@@ -146,12 +146,13 @@ class OutlierHandler extends TransformBase {
   }
 
   /**
-    * 更新超参数，如果算子不需要参数可以不用重写该方法，否则必须重写该方法
+    * 格式化超参数，模板方法，如无必要，子类无需重写该方法
     *
-    * @param params 要更新的超参数
+    * @param params 需要格式化的超参数
+    * @return 格式化后的超参数
     */
-  override def updateParam(params: Array[Double]) {
-    this.params = if (0.0 == params.head) {
+  override def formatParam(params: Array[Double]): Array[Double] = {
+    if (0.0 == params.head) {
       this.on = false
       Array.fill(getParamNum)(0.0)
     } else {

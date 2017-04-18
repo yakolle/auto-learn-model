@@ -37,7 +37,7 @@ class RegressionScheduler extends ProbeSchedulerBase {
     * @param currentTask 当前probe任务
     * @return 下次要probe的超参数列表
     */
-  override def getNextParams(currentTask: ProbeTask): Array[Double] = {
+  override def getNextParamsInternal(currentTask: ProbeTask): Array[Double] = {
     //轮盘选择要进行繁衍的某条线
     val paramMatrix = ParamHoldler.getBestParams
     val chosenRow = paramMatrix(choosePropagationLine(paramMatrix))
@@ -83,7 +83,8 @@ class RegressionScheduler extends ProbeSchedulerBase {
         for (j <- 0 until operator.getParamNum) yield {
           paramIndex += 1
           //按照欧式空间中的欧式长度（nextPace）进行分解
-          chosenRow(paramIndex) + paramWeights(paramIndex) * nextPace / paramWeightSum
+          chosenRow(paramIndex) + (if (paramWeightSum <= 0.0) operator.getEmpiricalParamPace(null, j)
+          else paramWeights(paramIndex) * nextPace / paramWeightSum)
         }
     }
   }

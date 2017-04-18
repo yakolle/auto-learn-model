@@ -35,9 +35,9 @@ class MutationIgniteScheduler extends SparkIgniteScheduler {
     * @param currentTask 当前probe任务
     * @return 下次要probe的超参数列表
     */
-  override def getNextParams(currentTask: ProbeTask): Array[Double] = {
+  override def getNextParamsInternal(currentTask: ProbeTask): Array[Double] = {
     //获取sparkle点
-    val param = super.getNextParams(currentTask)
+    val param = super.getNextParamsInternal(currentTask)
 
     var weights = learner.getParamImportances
     val maxWeight = weights.max
