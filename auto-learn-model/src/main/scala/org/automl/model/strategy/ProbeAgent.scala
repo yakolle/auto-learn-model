@@ -50,7 +50,7 @@ class ProbeAgent extends Runnable {
     val savepoint = task.getSavepoint
     if (savepoint.isEmpty) task.runPoint = 0
     else {
-      var runPointIndex = savepoint.indexWhere(_._1 > task.runPoint)
+      var runPointIndex = savepoint.indexWhere(_._1 >= task.runPoint)
       if (0 == runPointIndex) task.runPoint = 0
       else {
         runPointIndex = if (runPointIndex < 0) savepoint.length - 1 else runPointIndex - 1
