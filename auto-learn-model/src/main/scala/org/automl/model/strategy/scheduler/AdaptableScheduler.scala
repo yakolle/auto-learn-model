@@ -122,11 +122,10 @@ class AdaptableScheduler extends ProbeSchedulerBase {
       if (null == nextParams) {
         //如果参数返回为空，说明该策略已失效，就禁用掉该策略
         schedulerWeights(schedulerIndex) = 0.0
-        nextEstimate = 0.0
       } else if (!ParamHoldler.isUniqueParam(currentParams, nextParams)) {
         //判断新参数和历史参数是否相似，如果太相似，就重新获取新参数，同时增大系统扰动
         amplifyFluctuation()
-        nextEstimate = 0.0
+        nextParams = null
       } else {
         nextEstimate = learner.predict(nextParams)
         /*
@@ -136,7 +135,8 @@ class AdaptableScheduler extends ProbeSchedulerBase {
         maxEstimateAcceptRatioNice = maxEstimateAcceptRatio + (1 - maxEstimateAcceptRatio) * sinkingTimes / maxSinkingTimes
         sinkingTimes += 1
       }
-    } while (nextEstimate < currentEstimate && 1 - nextEstimate / currentEstimate > maxEstimateAcceptRatioNice * randomGenerator.nextDouble)
+    } while (null == nextParams ||
+      (nextEstimate < currentEstimate && 1 - nextEstimate / currentEstimate > maxEstimateAcceptRatioNice * randomGenerator.nextDouble))
 
     insertIntoParamSchedulerCache(nextParams, schedulerIndex)
     currentTask.updateParams(nextParams)
