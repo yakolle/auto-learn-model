@@ -16,7 +16,7 @@ abstract class SiftFeaturesBase extends BaseOperator {
     * 运行特征筛选算子
     *
     * @param data 数据（包含X,y）
-    * @return 筛选后的数据及特征，返回值为筛选后的数据
+    * @return 筛选后的数据
     */
   def run(data: DataFrame): DataFrame
 
@@ -24,7 +24,7 @@ abstract class SiftFeaturesBase extends BaseOperator {
     * 对数据进行特征筛选
     *
     * @param data 数据（包含X,y）
-    * @return 进过特征筛选后的数据
+    * @return 经过特征筛选后的数据
     */
   def transform(data: DataFrame): DataFrame = DataTransformUtil.selectFeaturesFromAssembledData(data, this.getFeatureIDs)
 

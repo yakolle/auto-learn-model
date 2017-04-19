@@ -91,7 +91,7 @@ object TaskBuilder {
   def initAssemblyValidation(operators: Array[BaseOperator]) {
     val validatorWeights = Array((-1.0, 1.0, 0.0, 0.0, 0.0))
     AssemblyValidation.setValidatorWeights(validatorWeights)
-    val trainValidatorWeights = Array((0.0, 1.0, 0.0, 0.0, 0.0))
+    val trainValidatorWeights = Array((-1.0, 1.0, 0.0, 0.0, 0.0))
     AssemblyValidation.setTrainValidatorWeights(trainValidatorWeights)
     val trainingAndTrainedValidationWeight = (1.0, 1.0, 0.0, 0.0, 0.0)
     AssemblyValidation.setTrainingAndTrainedValidationWeight(trainingAndTrainedValidationWeight)
