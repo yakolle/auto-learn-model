@@ -1,7 +1,7 @@
 # auto-learn-model
 Based on concept of genetic algorithm to automatically learn the super parameters of the learning model, such as LR, RF, GBDT, and so on
 
-## Usage:
+### Usage:
 Many configurations could be found within TaskBuilder   <br>
 * `[Required]`    Modify TaskBuilder.loadData function, to load the trainning data, within which the target column should be titled with "label".   <br>
 * `[Required]`    Modify TaskBuilder.getConvergenceRecordOutputPath function, to specify the output path of the records which logged the trace of converged state.    <br>
@@ -25,7 +25,7 @@ and of the cluster mode it will be faster. But more times you are waiting, much 
 # auto-learn-model
 基于遗传算法框架，自动学习各种学习模型的超参数，比如LR, RF, GBDT等等
 
-## 使用方法：
+### 使用方法：
 任务的配置大都在TaskBuilder中    <br>
 * 必需更改TaskBuilder的loadData方法，以加载训练文件，训练文件的target列需要命名为“label”    <br>
 * 必需更改TaskBuilder的getConvergenceRecordOutputPath方法，来指定收敛记录输出路径  <br>
