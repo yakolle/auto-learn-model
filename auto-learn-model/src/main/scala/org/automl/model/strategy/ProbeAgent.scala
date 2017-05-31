@@ -4,7 +4,6 @@ import org.automl.model.context.ParamHoldler
 import org.automl.model.operators.data.bagging.BaggingBase
 import org.automl.model.operators.data.balance.BalanceBase
 import org.automl.model.operators.data.evaluation.EvaluationBase
-import org.automl.model.operators.data.expand.ExpandFeaturesBase
 import org.automl.model.operators.data.format.FormatBase
 import org.automl.model.operators.data.sift.SiftFeaturesBase
 import org.automl.model.operators.data.transform.TransformBase
@@ -91,11 +90,6 @@ class ProbeAgent extends Runnable {
             //transform结束后，对数据进行保存
             savepoint += ((i, task.trainData, task.testData))
           }
-        case operator: ExpandFeaturesBase =>
-          task.trainData = operator.run(task.trainData).cache()
-          task.testData = operator.transform(task.testData).cache()
-          //特征扩展结束后，对数据进行保存
-          savepoint += ((i, task.trainData, task.testData))
         case operator: SiftFeaturesBase =>
           task.trainData = operator.run(task.trainData).cache()
           task.testData = operator.transform(task.testData).cache()
